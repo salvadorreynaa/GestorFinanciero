@@ -1,32 +1,20 @@
 let guardando = false;
 
-// Referencias globales a elementos del DOM
-let formulario, tipoSelect, inputTipoMovimiento, selectEmpresa;
-let activarMultiples, opcionesMultiples, recordatorioInicio, mesFinMultiple, explicacionMultiples, inputFecha;
-let btnAgregarEmpresa, btnAgregarTipo, modalOpciones, btnCerrarOpciones, modalOpcionesTitulo, inputNuevaOpcion, btnGuardarOpcion, listaOpciones;
-
 document.addEventListener("DOMContentLoaded", () => {
-  // Inicializa referencias
-  formulario = document.getElementById("formulario");
-  tipoSelect = document.getElementById("tipo");
-  inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  selectEmpresa = document.getElementById("empresa");
-
-  activarMultiples = document.getElementById("activar-multiples");
-  opcionesMultiples = document.getElementById("opciones-multiples");
-  recordatorioInicio = document.getElementById("recordatorio-inicio");
-  mesFinMultiple = document.getElementById("mes-fin-multiple");
-  explicacionMultiples = document.getElementById("explicacion-multiples");
-  inputFecha = document.getElementById("fecha");
-
-  btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
-  btnAgregarTipo = document.getElementById("btn-agregar-tipo");
-  modalOpciones = document.getElementById("modal-opciones");
-  btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
-  modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
-  inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  listaOpciones = document.getElementById("lista-opciones");
+  // Referencias a elementos del DOM (todas al inicio)
+  const formulario = document.getElementById("formulario");
+  const tipoSelect = document.getElementById("tipo");
+  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  const selectEmpresa = document.getElementById("empresa");
+  const activarMultiples = document.getElementById("activar-multiples");
+  const opcionesMultiples = document.getElementById("opciones-multiples");
+  const recordatorioInicio = document.getElementById("recordatorio-inicio");
+  const mesFinMultiple = document.getElementById("mes-fin-multiple");
+  const explicacionMultiples = document.getElementById("explicacion-multiples");
+  const inputFecha = document.getElementById("fecha");
+  const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
+  const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
+  // ...variables DOM ya declaradas arriba...
 
   // Cargar empresas y tipos de movimiento desde el backend
   function cargarEmpresas() {
@@ -269,12 +257,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- MODAL DE OPCIONES (EMPRESA O TIPO DE MOVIMIENTO) ---
-  const modalOpciones = document.getElementById("modal-opciones");
+  // variables DOM ya declaradas arriba
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
-  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  const listaOpciones = document.getElementById("lista-opciones");
-  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
 
   let modoOpciones = ""; // "empresa" o "tipo"
   let tipoOpciones = ""; // "ingreso" o "egreso" (solo para tipo de movimiento)

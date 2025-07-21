@@ -1,16 +1,13 @@
-const leerDatos = window.storageAPI.leerDatos;
-const guardarDatos = window.storageAPI.escribirDatos;
-
+// --- ADAPTADO PARA FLASK/API ---
 let opcionesIngreso = [];
 let opcionesEgreso = [];
 
-// Cargar tipos de ingreso y egreso desde JSON al iniciar
-window.storageAPI.leerTipoingreso().then(tipos => {
-  opcionesIngreso = Array.isArray(tipos) ? tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })) : [];
-});
-window.storageAPI.leerTipoegreso().then(tipos => {
-  opcionesEgreso = Array.isArray(tipos) ? tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })) : [];
-});
+async function cargarTiposMovimiento() {
+  const res = await fetch('/api/tipos_movimiento');
+  const tipos = await res.json();
+  opcionesIngreso = tipos.map(t => t.nombre);
+  opcionesEgreso = tipos.map(t => t.nombre);
+}
 
 let movimientosEliminados = [];
 let awesompleteModal;
@@ -181,45 +178,20 @@ function agregarFilaMovimiento(mov, tbody) {
 async function cargarOpcionesFiltroTipoMovimiento() {
   const select = document.getElementById("filtroTipoMovimiento");
   if (!select) return;
-
-  // Limpia y deja solo la opción "Todos"
   select.innerHTML = '<option value="Todos">Todos</option>';
-
-  // Lee ambos archivos
-  const tiposIngreso = await window.storageAPI.leerTipoingreso();
-  const tiposEgreso = await window.storageAPI.leerTipoegreso();
-
-  // Unifica y ordena sin duplicados
-  const tipos = Array.from(new Set([...(tiposIngreso || []), ...(tiposEgreso || [])]))
-    .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-
-  // Agrega las opciones
-  tipos.forEach(tipo => {
+  const res = await fetch('/api/tipos_movimiento');
+  const tipos = await res.json();
+  tipos.forEach(t => {
     const option = document.createElement("option");
-    option.value = tipo;
-    option.textContent = tipo;
+    option.value = t.nombre;
+    option.textContent = t.nombre;
     select.appendChild(option);
   });
 }
 
 async function cambiarEstado(id) {
-  let movimientos = await leerDatos() || [];
-  const index = movimientos.findIndex(mov => mov.id == id);
-  if (index === -1) return;
-
-  const actual = movimientos[index].estado;
-  let siguiente = actual;
-
-  if (movimientos[index].tipo === "ingreso") {
-    const estadosIngreso = ["Pendiente", "Cobrado"];
-    siguiente = estadosIngreso[(estadosIngreso.indexOf(actual) + 1) % estadosIngreso.length];
-  } else if (movimientos[index].tipo === "egreso") {
-    const estadosEgreso = ["Pendiente", "Pagado"];
-    siguiente = estadosEgreso[(estadosEgreso.indexOf(actual) + 1) % estadosEgreso.length];
-  }
-
-  movimientos[index].estado = siguiente;
-  await guardarDatos(movimientos);
+  // Aquí deberías hacer un fetch PUT/PATCH a tu API para cambiar el estado
+  // Por ahora solo recarga los movimientos
   await cargarMovimientos();
 }
 
@@ -249,53 +221,21 @@ function mostrarConfirmacion(mensaje) {
 }
 
 async function eliminarMovimiento(id) {
-  let movimientos = await leerDatos() || [];
-  const index = movimientos.findIndex(mov => mov.id == id);
-  if (index === -1) return;
-
   const confirmado = await mostrarConfirmacion("¿Estás seguro de que deseas eliminar esta transacción?");
   if (!confirmado) return;
-
-  const movEliminado = movimientos.splice(index, 1)[0];
-  movimientosEliminados.push(movEliminado);
-
-  await guardarDatos(movimientos);
+  await fetch(`/api/movimientos/${id}`, { method: 'DELETE' });
   await cargarMovimientos();
-  mostrarOcultarBotonDeshacer();
-
-  // Fuerza un repintado del navegador
-  document.body.style.display = 'none';
-  document.body.offsetHeight;
-  document.body.style.display = '';
-
-  // Refuerza el cierre del modal y habilita inputs
-  setTimeout(() => {
-    const modal = document.getElementById("modal-editar");
-    if (modal) {
-      modal.style.display = "none";
-      modal.style.pointerEvents = "none";
-      setTimeout(() => { modal.style.pointerEvents = ""; }, 500);
-    }
-    document.querySelectorAll("input, select, textarea").forEach(el => {
-      el.disabled = false;
-      el.readOnly = false;
-    });
-  }, 100);
 }
 
-// Abrir modal con datos para editar
 async function editarMovimiento(id) {
-  let movimientos = await leerDatos() || [];
-  const index = movimientos.findIndex(mov => mov.id == id);
-  if (index === -1) {
+  const res = await fetch(`/api/movimientos`);
+  const movimientos = await res.json();
+  const mov = movimientos.find(m => m.id == id);
+  if (!mov) {
     alert("Movimiento no encontrado");
     return;
   }
-  const mov = movimientos[index];
-
   await cargarEmpresasEnModal();
-
-  // Asegura que el select tenga las opciones correctas
   const selectTipo = document.getElementById("input-tipo");
   if (selectTipo && selectTipo.options.length < 2) {
     selectTipo.innerHTML = `
@@ -303,8 +243,6 @@ async function editarMovimiento(id) {
       <option value="egreso">Egreso</option>
     `;
   }
-
-  // Setear valores en inputs
   selectTipo.value = mov.tipo;
   document.getElementById("input-tipoMovimiento").value = mov.tipoMovimiento;
   document.getElementById("input-descripcion").value = mov.descripcion;
@@ -313,17 +251,7 @@ async function editarMovimiento(id) {
   document.getElementById("input-monto").value = mov.monto;
   document.getElementById("input-empresa").value = mov.empresa || "";
   document.getElementById("input-index").value = mov.id;
-
-  // Espera a que los tipos estén cargados antes de actualizar Awesomplete
-  if (mov.tipo === "ingreso" && opcionesIngreso.length === 0) {
-    opcionesIngreso = await window.storageAPI.leerTipoingreso() || [];
-  }
-  if (mov.tipo === "egreso" && opcionesEgreso.length === 0) {
-    opcionesEgreso = await window.storageAPI.leerTipoegreso() || [];
-  }
   actualizarAwesompleteModal(mov.tipo);
-
-  // Mostrar modal
   document.getElementById("modal-editar").style.display = "flex";
 }
 
@@ -523,6 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deshacerEliminacion = deshacerEliminacion;
   window.editarMovimiento = editarMovimiento;
 
+  cargarTiposMovimiento();
   cargarEmpresasFiltro();
   cargarOpcionesFiltroTipoMovimiento();
   cargarMovimientos();
@@ -539,25 +468,27 @@ if (filtroTipoBusqueda) {
 }
 
 async function cargarEmpresasFiltro() {
-  const empresas = await window.storageAPI.leerEmpresas();
+  const res = await fetch('/api/empresas');
+  const empresas = await res.json();
   const filtroEmpresa = document.getElementById("filtroEmpresa");
   filtroEmpresa.innerHTML = '<option value="Todas">Todas</option>';
-  empresas.forEach(empresa => {
+  empresas.forEach(e => {
     const option = document.createElement("option");
-    option.value = empresa;
-    option.textContent = empresa;
+    option.value = e.nombre;
+    option.textContent = e.nombre;
     filtroEmpresa.appendChild(option);
   });
 }
 
 async function cargarEmpresasEnModal() {
-  const empresas = await window.storageAPI.leerEmpresas();
+  const res = await fetch('/api/empresas');
+  const empresas = await res.json();
   const select = document.getElementById("input-empresa");
   select.innerHTML = '';
-  empresas.forEach(empresa => {
+  empresas.forEach(e => {
     const option = document.createElement("option");
-    option.value = empresa;
-    option.textContent = empresa;
+    option.value = e.nombre;
+    option.textContent = e.nombre;
     select.appendChild(option);
   });
 }
