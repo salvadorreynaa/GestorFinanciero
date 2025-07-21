@@ -11,6 +11,24 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+# Crear la tabla movimientos si no existe (esto se ejecuta siempre)
+try:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS movimientos (
+            id SERIAL PRIMARY KEY,
+            descripcion TEXT NOT NULL,
+            monto NUMERIC NOT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+except Exception as e:
+    print(f"Error creando la tabla movimientos: {e}")
+
 @app.route('/')
 def index():
     conn = get_db_connection()
@@ -49,18 +67,4 @@ def agregar():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Crear la tabla movimientos si no existe
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS movimientos (
-            id SERIAL PRIMARY KEY,
-            descripcion TEXT NOT NULL,
-            monto NUMERIC NOT NULL,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
-    conn.commit()
-    cur.close()
-    conn.close()
     app.run(host='0.0.0.0', port=5000)
