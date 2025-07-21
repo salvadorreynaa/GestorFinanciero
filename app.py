@@ -160,41 +160,46 @@ def api_movimientos_delete(id):
 
 @app.route('/api/movimientos', methods=['POST'])
 def api_movimientos_post():
-    data = request.get_json()
-    tipo = data.get('tipo')
-    tipo_movimiento = data.get('tipoMovimiento')
-    descripcion = data.get('descripcion')
-    fecha = data.get('fecha')
-    mes = data.get('mes')
-    año = data.get('año')
-    monto = data.get('monto')
-    empresa = data.get('empresa')
-    estado = data.get('estado', 'Pendiente')
-    conn = get_db_connection()
-    cur = conn.cursor()
-    # Insertar empresa si no existe
-    cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
-    empresa_id = cur.fetchone()
-    if not empresa_id:
-        cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
+    try:
+        data = request.get_json()
+        tipo = data.get('tipo')
+        tipo_movimiento = data.get('tipoMovimiento')
+        descripcion = data.get('descripcion')
+        fecha = data.get('fecha')
+        mes = data.get('mes')
+        año = data.get('año')
+        monto = data.get('monto')
+        empresa = data.get('empresa')
+        estado = data.get('estado', 'Pendiente')
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Insertar empresa si no existe
+        cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
         empresa_id = cur.fetchone()
-    empresa_id = empresa_id[0] if empresa_id else None
-    # Insertar tipo de movimiento si no existe
-    cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipo_movimiento,))
-    tipo_id = cur.fetchone()
-    if not tipo_id:
-        cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipo_movimiento,))
+        if not empresa_id:
+            cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
+            empresa_id = cur.fetchone()
+        empresa_id = empresa_id[0] if empresa_id else None
+        # Insertar tipo de movimiento si no existe
+        cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipo_movimiento,))
         tipo_id = cur.fetchone()
-    tipo_id = tipo_id[0] if tipo_id else None
-    # Insertar movimiento
-    cur.execute('''
-        INSERT INTO movimientos (tipo, tipoMovimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ''', (tipo, tipo_movimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'status': 'ok'})
+        if not tipo_id:
+            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipo_movimiento,))
+            tipo_id = cur.fetchone()
+        tipo_id = tipo_id[0] if tipo_id else None
+        # Insertar movimiento
+        cur.execute('''
+            INSERT INTO movimientos (tipo, tipoMovimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ''', (tipo, tipo_movimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        print('Error en /api/movimientos POST:', e)
+        import traceback; traceback.print_exc()
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 # --- API endpoints para contactos ---
 @app.route('/api/contactos', methods=['GET'])
