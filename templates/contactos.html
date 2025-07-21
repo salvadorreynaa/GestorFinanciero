@@ -10,24 +10,7 @@
 <body>
   <header>
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">Inicio</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('estadisticas') }}">Estadísticas</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('contactos') }}">Contactos</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('movimientos') }}">Movimientos</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+    {% include 'navbar.html' %}
   </header>
 
 <form id="formulario" class="form-contactos">
@@ -172,15 +155,6 @@
 <ul id="lista-contactos" class="lista-contactos"></ul>
 
 
-  <script src="../js/contactos.js"></script>
-  <div id="toast-contactos" class="toast-contactos"></div>
-
-
-
-
-<div id="toast-contactos-exito" class="toast-contactos-exito"></div>
-
-
-  
+  <script src="{{ url_for('static', filename='js/contactos.js') }}"></script>
 </body>
 </html>

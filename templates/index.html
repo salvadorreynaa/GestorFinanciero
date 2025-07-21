@@ -11,24 +11,7 @@
 <body>
   <header>
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="logo">
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">Inicio</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('estadisticas') }}">Estadísticas</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('contactos') }}">Contactos</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('movimientos') }}">Movimientos</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+    {% include 'navbar.html' %}
   </header>
 <div class="titulo-con-botones">
   <h1 class="inicio-titulo">Finanzas Vaya Valla</h1>
@@ -166,6 +149,6 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
-  <script src="js/script.js"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
