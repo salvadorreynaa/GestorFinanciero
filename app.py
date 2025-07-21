@@ -262,3 +262,23 @@ def api_tipos_movimiento_post():
     cur.close()
     conn.close()
     return jsonify({'status': 'ok'})
+
+@app.route('/api/empresas/<nombre>', methods=['DELETE'])
+def api_empresas_delete(nombre):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM empresas WHERE nombre=%s;', (nombre,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/tipos_movimiento/<nombre>', methods=['DELETE'])
+def api_tipos_movimiento_delete(nombre):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM tipos_movimiento WHERE nombre=%s;', (nombre,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})

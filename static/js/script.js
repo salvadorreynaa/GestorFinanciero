@@ -162,104 +162,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Evento submit del formulario para agregar movimiento (único bloque)
-  formulario.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    if (guardando) return;
-
-    const tipo = tipoSelect.value;
-    const tipoMovimiento = inputTipoMovimiento.value.trim();
-    const descripcion = document.getElementById("descripcion").value.trim();
-    const fecha = inputFecha.value.trim();
-    const mes = document.getElementById("mes").value;
-    const año = document.getElementById("año").value;
-    const monto = parseFloat(document.getElementById("monto").value);
-    const empresa = selectEmpresa.value;
-
-    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) return;
-
-    guardando = true;
-
-    // --- MODO MÚLTIPLE ---
-    if (activarMultiples && activarMultiples.checked && mesFinMultiple && mesFinMultiple.value) {
-      const [anioInicio, mesInicio, diaInicio] = fecha.split("-");
-      const [anioFin, mesFinNum] = mesFinMultiple.value.split("-");
-      const movimientosMultiples = [];
-      let y = parseInt(anioInicio, 10);
-      let m = parseInt(mesInicio, 10);
-
-      while (y < parseInt(anioFin, 10) || (y === parseInt(anioFin, 10) && m <= parseInt(mesFinNum, 10))) {
-        const fechaMovimiento = `${y}-${String(m).padStart(2, "0")}-${diaInicio}`;
-        const nombreMes = [
-          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ][m - 1];
-
-        movimientosMultiples.push({
-          id: Date.now() + movimientosMultiples.length,
-          tipo,
-          tipoMovimiento,
-          descripcion,
-          fecha: fechaMovimiento,
-          mes: nombreMes,
-          año: y,
-          monto,
-          empresa,
-          estado: "Pendiente"
-        });
-
-        m++;
-        if (m > 12) {
-          m = 1;
-          y++;
-        }
+  if (formulario) {
+    formulario.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (guardando) return;
+      const tipo = tipoSelect.value;
+      const tipoMovimiento = inputTipoMovimiento.value.trim();
+      const descripcion = document.getElementById("descripcion").value.trim();
+      const fecha = inputFecha.value.trim();
+      const mes = fecha ? fecha.split("-")[1] : "";
+      const año = fecha ? fecha.split("-")[0] : "";
+      const monto = parseFloat(document.getElementById("monto").value);
+      const empresa = selectEmpresa.value;
+      if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto) || !empresa) {
+        mostrarToast("Completa todos los campos obligatorios.");
+        return;
       }
-
-      window.storageAPI.leerDatos().then(movimientos => {
-        movimientos = Array.isArray(movimientos) ? movimientos : [];
-        movimientos.push(...movimientosMultiples);
-        return window.storageAPI.escribirDatos(movimientos);
-      }).then(() => {
+      guardando = true;
+      try {
+        await fetch("/api/movimientos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tipo,
+            tipoMovimiento,
+            descripcion,
+            fecha,
+            mes,
+            año,
+            monto,
+            empresa,
+            estado: "Pendiente"
+          })
+        });
         formulario.reset();
-        actualizarAwesomplete(tipoSelect.value);
-        mostrarToast(`✅ Se guardaron ${movimientosMultiples.length} movimientos correctamente.`);
-      }).catch(err => {
-        console.error(err);
-      }).finally(() => {
+        mostrarToast("✅ Movimiento guardado correctamente.");
+      } catch (err) {
+        mostrarToast("Error al guardar el movimiento.");
+      } finally {
         guardando = false;
-      });
-
-      return; // Detiene aquí si es múltiple
-    }
-
-    // --- MODO NORMAL ---
-    const nuevoMovimiento = {
-      id: Date.now(),
-      tipo,
-      tipoMovimiento,
-      descripcion,
-      fecha,
-      mes,
-      año,
-      monto,
-      empresa,
-      estado: "Pendiente"
-    };
-
-    window.storageAPI.leerDatos().then(movimientos => {
-      movimientos = Array.isArray(movimientos) ? movimientos : [];
-      movimientos.push(nuevoMovimiento);
-      return window.storageAPI.escribirDatos(movimientos);
-    }).then(() => {
-      formulario.reset();
-      actualizarAwesomplete(tipoSelect.value);
-      mostrarToast("✅ Movimiento guardado correctamente.");
-    }).catch(err => {
-      console.error(err);
-    }).finally(() => {
-      guardando = false;
+      }
     });
-  });
+  }
 
   // Toast visual
   function mostrarToast(mensaje) {
@@ -452,13 +396,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const confirmado = await mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`);
         if (!confirmado) return;
         if (modoOpciones === "empresa") {
-          // No hay endpoint para eliminar empresa, pero podrías agregarlo en Flask
-          alert("Eliminar empresa no implementado en la API");
+          await fetch(`/api/empresas/${encodeURIComponent(valor)}`, { method: 'DELETE' });
+          cargarEmpresas();
         } else if (modoOpciones === "tipo") {
-          alert("Eliminar tipo de movimiento no implementado en la API");
+          await fetch(`/api/tipos_movimiento/${encodeURIComponent(valor)}`, { method: 'DELETE' });
+          cargarTiposMovimiento();
         }
-        cargarEmpresas();
-        cargarTiposMovimiento();
         cargarListaOpciones();
       };
     });
