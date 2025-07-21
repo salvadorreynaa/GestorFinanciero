@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, request
 import psycopg2
 
 app = Flask(__name__)
@@ -10,38 +10,6 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
-
-# Crear las tablas si no existen (esto se ejecuta siempre)
-try:
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS empresas (
-            id SERIAL PRIMARY KEY,
-            nombre TEXT NOT NULL UNIQUE
-        );
-    ''')
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS tipos_movimiento (
-            id SERIAL PRIMARY KEY,
-            nombre TEXT NOT NULL UNIQUE
-        );
-    ''')
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS movimientos (
-            id SERIAL PRIMARY KEY,
-            descripcion TEXT NOT NULL,
-            monto NUMERIC NOT NULL,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            empresa_id INTEGER REFERENCES empresas(id),
-            tipo_id INTEGER REFERENCES tipos_movimiento(id)
-        );
-    ''')
-    conn.commit()
-    cur.close()
-    conn.close()
-except Exception as e:
-    print(f"Error creando las tablas: {e}")
 
 @app.route('/')
 def index():
@@ -97,9 +65,6 @@ def agregar():
     cur.close()
     conn.close()
     return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
 
 # --- API endpoint para estadísticas ---
 @app.route('/api/estadisticas', methods=['GET'])
@@ -227,8 +192,6 @@ def api_contactos_delete(id):
     return jsonify({'status': 'ok'})
 
 # --- API endpoints para empresas y tipos de movimiento ---
-from flask import jsonify, request
-
 @app.route('/api/empresas', methods=['GET'])
 def api_empresas():
     conn = get_db_connection()
