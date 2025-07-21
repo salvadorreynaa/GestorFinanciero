@@ -14,7 +14,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputFecha = document.getElementById("fecha");
   const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
   const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
-  // ...variables DOM ya declaradas arriba...
+  const modalOpciones = document.getElementById("modal-opciones");
+  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
+  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  const listaOpciones = document.getElementById("lista-opciones");
+
+  // Definir modalOpcionesTitulo solo si existe
+  let modalOpcionesTitulo = null;
+  if (document.getElementById("modal-opciones-titulo")) {
+    modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
+  }
 
   // Cargar empresas y tipos de movimiento desde el backend
   function cargarEmpresas() {
