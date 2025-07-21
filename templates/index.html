@@ -39,12 +39,12 @@
 </div>
 
   <!-- Formulario de ingreso -->
-  <form id="formulario">
+  <form id="formulario" action="{{ url_for('agregar') }}" method="POST">
     <!-- Fila 1: Fecha, Empresa, Monto -->
     <div class="form-row">
       <label>
         Fecha:
-        <input type="date" id="fecha" required>
+        <input type="date" id="fecha" name="fecha" required>
       </label>
       <label style="display: flex; align-items: center;">
         Empresa:
@@ -54,7 +54,7 @@
       </label>
       <label>
         Monto:
-        <input type="number" id="monto" step="0.01" required>
+        <input type="number" id="monto" name="monto" step="0.01" required>
       </label>
     </div>
 
@@ -62,7 +62,7 @@
     <div class="form-row">
       <label>
         Tipo:
-        <select id="tipo" required>
+        <select id="tipo" name="tipo" required>
           <option value="">Selecciona...</option>
           <option value="ingreso">Ingreso</option>
           <option value="egreso">Egreso</option>
@@ -74,7 +74,7 @@
       </label>
       <label>
         Descripción:
-        <input type="text" id="descripcion" required>
+        <input type="text" id="descripcion" name="descripcion" required>
       </label>
     </div>
 
@@ -82,7 +82,7 @@
     <div class="form-row">
       <label>
         Mes:
-        <select id="mes">
+        <select id="mes" name="mes">
           <option value="Enero">Enero</option>
           <option value="Febrero">Febrero</option>
           <option value="Marzo">Marzo</option>
@@ -99,7 +99,7 @@
       </label>
       <label>
         Año:
-        <select id="año">
+        <select id="año" name="año">
           <option value="2025">2025</option>
           <option value="2026">2026</option>
           <option value="2027">2027</option>
@@ -113,7 +113,7 @@
     <!-- Fila 4: Múltiples movimientos automáticos -->
     <div class="form-row" style="align-items: flex-start;">
       <label style="display: flex; align-items: center;">
-        <input type="checkbox" id="activar-multiples" style="margin-right:6px;">
+        <input type="checkbox" id="activar-multiples" name="activar_multiples" style="margin-right:6px;">
         Activar movimientos mensuales automáticos
       </label>
       <div id="opciones-multiples" style="display:none; flex: 1 1 100%; flex-direction: column; margin-left: 18px;">
@@ -122,7 +122,7 @@
         </div>
         <label>
           Mes y año de finalización:
-          <input type="month" id="mes-fin-multiple">
+          <input type="month" id="mes-fin-multiple" name="mes_fin_multiple">
         </label>
         <div id="explicacion-multiples" style="font-size:0.95em;color:#555;margin-top:6px;"></div>
       </div>
