@@ -282,3 +282,27 @@ def api_tipos_movimiento_delete(nombre):
     cur.close()
     conn.close()
     return jsonify({'status': 'ok'})
+
+@app.route('/api/empresas/<nombre>', methods=['PUT'])
+def api_empresas_rename(nombre):
+    data = request.get_json()
+    nuevo_nombre = data.get('nombre')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('UPDATE empresas SET nombre=%s WHERE nombre=%s;', (nuevo_nombre, nombre))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/tipos_movimiento/<nombre>', methods=['PUT'])
+def api_tipos_movimiento_rename(nombre):
+    data = request.get_json()
+    nuevo_nombre = data.get('nombre')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('UPDATE tipos_movimiento SET nombre=%s WHERE nombre=%s;', (nuevo_nombre, nombre))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})

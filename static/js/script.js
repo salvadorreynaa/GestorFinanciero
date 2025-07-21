@@ -365,18 +365,16 @@ document.addEventListener("DOMContentLoaded", () => {
           const nuevoValor = input.value.trim();
           if (!nuevoValor || nuevoValor === valorAntiguo) { cancelarEdicion(); return; }
           if (modoOpciones === "empresa") {
-            // Eliminar la empresa antigua y agregar la nueva
-            await fetch(`/api/empresas`, {
-              method: "POST",
+            await fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
+              method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ nombre: nuevoValor })
             });
-            // No hay endpoint para editar, así que solo agregamos la nueva
             cargarEmpresas();
             cargarListaOpciones();
           } else if (modoOpciones === "tipo") {
-            await fetch(`/api/tipos_movimiento`, {
-              method: "POST",
+            await fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}`, {
+              method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ nombre: nuevoValor })
             });
@@ -426,6 +424,18 @@ document.addEventListener("DOMContentLoaded", () => {
       function onNo() { cerrar(false); }
       btnSi.addEventListener("click", onSi);
       btnNo.addEventListener("click", onNo);
+    });
+  }
+
+  // Mostrar todas las opciones de tipo de movimiento al hacer click o focus
+  if (inputTipoMovimiento && window.Awesomplete) {
+    inputTipoMovimiento.addEventListener("focus", function() {
+      this.value = "";
+      if (window.awesomplete) window.awesomplete.evaluate();
+    });
+    inputTipoMovimiento.addEventListener("click", function() {
+      this.value = "";
+      if (window.awesomplete) window.awesomplete.evaluate();
     });
   }
 });
