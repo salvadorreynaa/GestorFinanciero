@@ -69,57 +69,84 @@ def agregar():
 # --- API endpoint para estadísticas ---
 @app.route('/api/estadisticas', methods=['GET'])
 def api_estadisticas():
-    mes = request.args.get('mes')
-    año = request.args.get('año')
-    conn = get_db_connection()
-    cur = conn.cursor()
-    query = '''
-        SELECT m.tipo_id, t.nombre, m.monto, m.fecha
-        FROM movimientos m
-        LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
-    '''
-    cur.execute(query)
-    rows = cur.fetchall()
-    ingresos = egresos = cobrado = porCobrar = porPagar = 0
-    for tipo_id, tipo_nombre, monto, fecha in rows:
-        # Filtrar por mes y año si se pasan como parámetros
-        if mes and año:
-            if fecha.strftime('%B') != mes or str(fecha.year) != año:
-                continue
-        if tipo_nombre == 'ingreso':
-            ingresos += float(monto)
-            cobrado += float(monto) # simplificado, puedes adaptar según tu lógica
-        elif tipo_nombre == 'egreso':
-            egresos += float(monto)
-            porPagar += float(monto)
-    disponible = ingresos - egresos
-    cur.close()
-    conn.close()
-    return jsonify({
-        'ingresos': ingresos,
-        'egresos': egresos,
-        'disponible': disponible,
-        'cobrado': cobrado,
-        'porCobrar': porCobrar,
-        'porPagar': porPagar
-    })
+    try:
+        mes = request.args.get('mes')
+        año = request.args.get('año')
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = '''
+            SELECT m.tipo_id, t.nombre, m.monto, m.fecha
+            FROM movimientos m
+            LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
+        '''
+        cur.execute(query)
+        rows = cur.fetchall()
+        ingresos = egresos = cobrado = porCobrar = porPagar = 0
+        for tipo_id, tipo_nombre, monto, fecha in rows:
+            # Filtrar por mes y año si se pasan como parámetros
+            if mes and año and fecha:
+                if fecha.strftime('%B') != mes or str(fecha.year) != año:
+                    continue
+            if tipo_nombre == 'ingreso':
+                ingresos += float(monto) if monto is not None else 0.0
+                cobrado += float(monto) if monto is not None else 0.0
+            elif tipo_nombre == 'egreso':
+                egresos += float(monto) if monto is not None else 0.0
+                porPagar += float(monto) if monto is not None else 0.0
+        disponible = ingresos - egresos
+        cur.close()
+        conn.close()
+        return jsonify({
+            'ingresos': ingresos,
+            'egresos': egresos,
+            'disponible': disponible,
+            'cobrado': cobrado,
+            'porCobrar': porCobrar,
+            'porPagar': porPagar
+        })
+    except Exception as e:
+        print('Error en /api/estadisticas:', e)
+        return jsonify({
+            'ingresos': 0,
+            'egresos': 0,
+            'disponible': 0,
+            'cobrado': 0,
+            'porCobrar': 0,
+            'porPagar': 0
+        }), 200
 
 # --- API endpoints para movimientos ---
 @app.route('/api/movimientos', methods=['GET'])
 def api_movimientos():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        SELECT m.id, m.fecha, e.nombre as empresa, t.nombre as tipo, m.descripcion, m.monto, t.nombre as tiposmovimientos
-        FROM movimientos m
-        LEFT JOIN empresas e ON m.empresa_id = e.id
-        LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
-        ORDER BY m.fecha DESC;
-    ''')
-    movimientos = [dict(zip(['id','fecha','empresa','tipo','descripcion','monto','tiposmovimientos'], row)) for row in cur.fetchall()]
-    cur.close()
-    conn.close()
-    return jsonify(movimientos)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT m.id, m.fecha, e.nombre as empresa, t.nombre as tipo, m.descripcion, m.monto, t.nombre as tiposmovimientos
+            FROM movimientos m
+            LEFT JOIN empresas e ON m.empresa_id = e.id
+            LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
+            ORDER BY m.fecha DESC;
+        ''')
+        movimientos = []
+        for row in cur.fetchall():
+            # Manejo de nulos y tipos
+            id, fecha, empresa, tipo, descripcion, monto, tiposmovimientos = row
+            movimientos.append({
+                'id': id,
+                'fecha': fecha.isoformat() if fecha else '',
+                'empresa': empresa or '',
+                'tipo': tipo or '',
+                'descripcion': descripcion or '',
+                'monto': float(monto) if monto is not None else 0.0,
+                'tiposmovimientos': tiposmovimientos or ''
+            })
+        cur.close()
+        conn.close()
+        return jsonify(movimientos)
+    except Exception as e:
+        print('Error en /api/movimientos:', e)
+        return jsonify([]), 200
 
 @app.route('/api/movimientos/<int:id>', methods=['DELETE'])
 def api_movimientos_delete(id):
