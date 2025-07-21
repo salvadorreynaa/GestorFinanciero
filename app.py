@@ -11,23 +11,37 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
-# Crear la tabla movimientos si no existe (esto se ejecuta siempre)
+# Crear las tablas si no existen (esto se ejecuta siempre)
 try:
     conn = get_db_connection()
     cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS empresas (
+            id SERIAL PRIMARY KEY,
+            nombre TEXT NOT NULL UNIQUE
+        );
+    ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS tipos_movimiento (
+            id SERIAL PRIMARY KEY,
+            nombre TEXT NOT NULL UNIQUE
+        );
+    ''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS movimientos (
             id SERIAL PRIMARY KEY,
             descripcion TEXT NOT NULL,
             monto NUMERIC NOT NULL,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            empresa_id INTEGER REFERENCES empresas(id),
+            tipo_id INTEGER REFERENCES tipos_movimiento(id)
         );
     ''')
     conn.commit()
     cur.close()
     conn.close()
 except Exception as e:
-    print(f"Error creando la tabla movimientos: {e}")
+    print(f"Error creando las tablas: {e}")
 
 @app.route('/')
 def index():
@@ -58,9 +72,27 @@ def movimientos():
 def agregar():
     descripcion = request.form['descripcion']
     monto = request.form['monto']
+    # Aquí deberías obtener empresa y tipo de movimiento del formulario
+    empresa = request.form.get('empresa')
+    tipo = request.form.get('tiposmovimientos')
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO movimientos (descripcion, monto) VALUES (%s, %s);', (descripcion, monto))
+    # Insertar empresa si no existe
+    cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
+    empresa_id = cur.fetchone()
+    if not empresa_id:
+        cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
+        empresa_id = cur.fetchone()
+    empresa_id = empresa_id[0] if empresa_id else None
+    # Insertar tipo de movimiento si no existe
+    cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipo,))
+    tipo_id = cur.fetchone()
+    if not tipo_id:
+        cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipo,))
+        tipo_id = cur.fetchone()
+    tipo_id = tipo_id[0] if tipo_id else None
+    # Insertar movimiento
+    cur.execute('INSERT INTO movimientos (descripcion, monto, empresa_id, tipo_id) VALUES (%s, %s, %s, %s);', (descripcion, monto, empresa_id, tipo_id))
     conn.commit()
     cur.close()
     conn.close()
@@ -68,3 +100,175 @@ def agregar():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+# --- API endpoint para estadísticas ---
+@app.route('/api/estadisticas', methods=['GET'])
+def api_estadisticas():
+    mes = request.args.get('mes')
+    año = request.args.get('año')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    query = '''
+        SELECT m.tipo_id, t.nombre, m.monto, m.fecha
+        FROM movimientos m
+        LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
+    '''
+    cur.execute(query)
+    rows = cur.fetchall()
+    ingresos = egresos = cobrado = porCobrar = porPagar = 0
+    for tipo_id, tipo_nombre, monto, fecha in rows:
+        # Filtrar por mes y año si se pasan como parámetros
+        if mes and año:
+            if fecha.strftime('%B') != mes or str(fecha.year) != año:
+                continue
+        if tipo_nombre == 'ingreso':
+            ingresos += float(monto)
+            cobrado += float(monto) # simplificado, puedes adaptar según tu lógica
+        elif tipo_nombre == 'egreso':
+            egresos += float(monto)
+            porPagar += float(monto)
+    disponible = ingresos - egresos
+    cur.close()
+    conn.close()
+    return jsonify({
+        'ingresos': ingresos,
+        'egresos': egresos,
+        'disponible': disponible,
+        'cobrado': cobrado,
+        'porCobrar': porCobrar,
+        'porPagar': porPagar
+    })
+
+# --- API endpoints para movimientos ---
+@app.route('/api/movimientos', methods=['GET'])
+def api_movimientos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        SELECT m.id, m.fecha, e.nombre as empresa, t.nombre as tipo, m.descripcion, m.monto, t.nombre as tiposmovimientos
+        FROM movimientos m
+        LEFT JOIN empresas e ON m.empresa_id = e.id
+        LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
+        ORDER BY m.fecha DESC;
+    ''')
+    movimientos = [dict(zip(['id','fecha','empresa','tipo','descripcion','monto','tiposmovimientos'], row)) for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(movimientos)
+
+@app.route('/api/movimientos/<int:id>', methods=['DELETE'])
+def api_movimientos_delete(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM movimientos WHERE id=%s;', (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+# --- API endpoints para contactos ---
+@app.route('/api/contactos', methods=['GET'])
+def api_contactos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT id, nombre, empresa, celular, email, direccion, especialidad, descripcion FROM contactos ORDER BY nombre ASC;')
+    contactos = [dict(zip(['id','nombre','empresa','celular','email','direccion','especialidad','descripcion'], row)) for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(contactos)
+
+@app.route('/api/contactos', methods=['POST'])
+def api_contactos_post():
+    data = request.get_json()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        INSERT INTO contactos (nombre, empresa, celular, email, direccion, especialidad, descripcion)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (data['nombre'], data['empresa'], data['celular'], data['email'], data['direccion'], data['especialidad'], data['descripcion']))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/contactos/<int:id>', methods=['GET'])
+def api_contactos_get(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT id, nombre, empresa, celular, email, direccion, especialidad, descripcion FROM contactos WHERE id=%s;', (id,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if row:
+        return jsonify(dict(zip(['id','nombre','empresa','celular','email','direccion','especialidad','descripcion'], row)))
+    return jsonify({})
+
+@app.route('/api/contactos/<int:id>', methods=['PUT'])
+def api_contactos_put(id):
+    data = request.get_json()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        UPDATE contactos SET nombre=%s, empresa=%s, celular=%s, email=%s, direccion=%s, especialidad=%s, descripcion=%s WHERE id=%s
+    ''', (data['nombre'], data['empresa'], data['celular'], data['email'], data['direccion'], data['especialidad'], data['descripcion'], id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/contactos/<int:id>', methods=['DELETE'])
+def api_contactos_delete(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM contactos WHERE id=%s;', (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+# --- API endpoints para empresas y tipos de movimiento ---
+from flask import jsonify, request
+
+@app.route('/api/empresas', methods=['GET'])
+def api_empresas():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT nombre FROM empresas ORDER BY nombre ASC;')
+    empresas = [{'nombre': row[0]} for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(empresas)
+
+@app.route('/api/empresas', methods=['POST'])
+def api_empresas_post():
+    data = request.get_json()
+    nombre = data.get('nombre')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING;', (nombre,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/tipos_movimiento', methods=['GET'])
+def api_tipos_movimiento():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT nombre FROM tipos_movimiento ORDER BY nombre ASC;')
+    tipos = [{'nombre': row[0]} for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(tipos)
+
+@app.route('/api/tipos_movimiento', methods=['POST'])
+def api_tipos_movimiento_post():
+    data = request.get_json()
+    nombre = data.get('nombre')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING;', (nombre,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok'})

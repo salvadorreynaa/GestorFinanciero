@@ -1,91 +1,117 @@
 let guardando = false;
 
+// Referencias globales a elementos del DOM
+let formulario, tipoSelect, inputTipoMovimiento, selectEmpresa;
+let activarMultiples, opcionesMultiples, recordatorioInicio, mesFinMultiple, explicacionMultiples, inputFecha;
+let btnAgregarEmpresa, btnAgregarTipo, modalOpciones, btnCerrarOpciones, modalOpcionesTitulo, inputNuevaOpcion, btnGuardarOpcion, listaOpciones;
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Referencias a elementos del DOM
-  const formulario = document.getElementById("formulario");
-  const tipoSelect = document.getElementById("tipo");
-  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  const selectEmpresa = document.getElementById("empresa");
+  // Inicializa referencias
+  formulario = document.getElementById("formulario");
+  tipoSelect = document.getElementById("tipo");
+  inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  selectEmpresa = document.getElementById("empresa");
 
-  // Múltiples movimientos automáticos
-  const activarMultiples = document.getElementById("activar-multiples");
-  const opcionesMultiples = document.getElementById("opciones-multiples");
-  const recordatorioInicio = document.getElementById("recordatorio-inicio");
-  const mesFinMultiple = document.getElementById("mes-fin-multiple");
-  const explicacionMultiples = document.getElementById("explicacion-multiples");
-  const inputFecha = document.getElementById("fecha");
+  activarMultiples = document.getElementById("activar-multiples");
+  opcionesMultiples = document.getElementById("opciones-multiples");
+  recordatorioInicio = document.getElementById("recordatorio-inicio");
+  mesFinMultiple = document.getElementById("mes-fin-multiple");
+  explicacionMultiples = document.getElementById("explicacion-multiples");
+  inputFecha = document.getElementById("fecha");
 
-  // Opciones de ingreso y egreso (se cargan desde JSON)
-  let opcionesIngreso = [];
-  let opcionesEgreso = [];
+  btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
+  btnAgregarTipo = document.getElementById("btn-agregar-tipo");
+  modalOpciones = document.getElementById("modal-opciones");
+  btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
+  modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
+  inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  listaOpciones = document.getElementById("lista-opciones");
 
-  // Cargar tipos de ingreso y egreso desde JSON al iniciar
-  window.storageAPI.leerTipoingreso().then(tipos => {
-    opcionesIngreso = Array.isArray(tipos) ? tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })) : [];
-    if (tipoSelect.value === "ingreso") actualizarAwesomplete("ingreso");
-  });
-
-  window.storageAPI.leerTipoegreso().then(tipos => {
-    opcionesEgreso = Array.isArray(tipos) ? tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })) : [];
-    if (tipoSelect.value === "egreso") actualizarAwesomplete("egreso");
-  });
-
-  // Instancia de Awesomplete
-  let awesomplete;
-
-  function actualizarAwesomplete(tipo) {
-    let opciones = [];
-    if (tipo === 'ingreso') {
-      opciones = opcionesIngreso;
-    } else if (tipo === 'egreso') {
-      opciones = opcionesEgreso;
-    } else {
-      opciones = [];
-    }
-
-    if (!awesomplete) {
-      awesomplete = new Awesomplete(inputTipoMovimiento, {
-        list: opciones,
-        minChars: 0,
-        autoFirst: true,
-        maxItems: 999,
-        sort: (a, b) => a.value.localeCompare(b.value, 'es', { sensitivity: 'base' })
-      });
-    } else {
-      awesomplete.list = opciones;
-      awesomplete.sort = (a, b) => a.value.localeCompare(b.value, 'es', { sensitivity: 'base' });
-    }
-  }
-
-  // Inicializa Awesomplete al cargar
-  actualizarAwesomplete(tipoSelect.value);
-
-  // Cambia las opciones cuando cambia el tipo
-  tipoSelect.addEventListener('change', (e) => {
-    actualizarAwesomplete(e.target.value);
-  });
-
-  // Permite mostrar todas las opciones al hacer clic en el input
-  inputTipoMovimiento.addEventListener("focus", function() {
-    this.value = "";
-    awesomplete.evaluate();
-  });
-
-  // Función para cargar empresas en el select
+  // Cargar empresas y tipos de movimiento desde el backend
   function cargarEmpresas() {
-    selectEmpresa.innerHTML = '<option value="">Selecciona...</option>';
-    window.storageAPI.leerEmpresas().then(empresas => {
-      empresas.forEach(empresa => {
-        const option = document.createElement("option");
-        option.value = empresa;
-        option.textContent = empresa;
-        selectEmpresa.appendChild(option);
+    fetch("/api/empresas")
+      .then(res => res.json())
+      .then(data => {
+        selectEmpresa.innerHTML = '<option value="">Selecciona...</option>';
+        data.forEach(e => {
+          const opt = document.createElement("option");
+          opt.value = e.nombre;
+          opt.textContent = e.nombre;
+          selectEmpresa.appendChild(opt);
+        });
       });
-    });
   }
 
-  // Inicializar empresas al cargar la página
+  function cargarTiposMovimiento() {
+    fetch("/api/tipos_movimiento")
+      .then(res => res.json())
+      .then(data => {
+        // Actualiza Awesomplete
+        if (window.Awesomplete) {
+          window.awesomplete = new Awesomplete(inputTipoMovimiento, {
+            list: data.map(t => t.nombre),
+            minChars: 0,
+            autoFirst: true,
+            maxItems: 999,
+            sort: (a, b) => a.value.localeCompare(b.value, 'es', { sensitivity: 'base' })
+          });
+        }
+      });
+  }
+
   cargarEmpresas();
+  cargarTiposMovimiento();
+
+  // Mostrar el modal para agregar empresa/tipo
+  btnAgregarEmpresa.addEventListener("click", () => {
+    modalOpcionesTitulo.textContent = "Agregar empresa";
+    modalOpciones.style.display = "block";
+    inputNuevaOpcion.value = "";
+    listaOpciones.innerHTML = "";
+    btnGuardarOpcion.onclick = () => {
+      const nombre = inputNuevaOpcion.value.trim();
+      if (nombre) {
+        fetch("/api/empresas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre })
+        }).then(() => {
+          cargarEmpresas();
+          modalOpciones.style.display = "none";
+        });
+      }
+    };
+  });
+
+  btnAgregarTipo.addEventListener("click", () => {
+    modalOpcionesTitulo.textContent = "Agregar tipo de movimiento";
+    modalOpciones.style.display = "block";
+    inputNuevaOpcion.value = "";
+    listaOpciones.innerHTML = "";
+    btnGuardarOpcion.onclick = () => {
+      const nombre = inputNuevaOpcion.value.trim();
+      if (nombre) {
+        fetch("/api/tipos_movimiento", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre })
+        }).then(() => {
+          cargarTiposMovimiento();
+          modalOpciones.style.display = "none";
+        });
+      }
+    };
+  });
+
+  btnCerrarOpciones.addEventListener("click", () => {
+    modalOpciones.style.display = "none";
+  });
+
+  // Múltiples movimientos automáticos (lógica original)
+  activarMultiples.addEventListener("change", () => {
+    opcionesMultiples.style.display = activarMultiples.checked ? "flex" : "none";
+  });
 
   // --- MÚLTIPLES MOVIMIENTOS AUTOMÁTICOS ---
   if (activarMultiples && opcionesMultiples && recordatorioInicio && mesFinMultiple && explicacionMultiples && inputFecha) {

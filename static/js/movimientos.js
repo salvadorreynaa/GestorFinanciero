@@ -35,7 +35,8 @@ function actualizarAwesompleteModal(tipo) {
 }
 
 async function cargarMovimientos() {
-  let movimientos = await leerDatos() || [];
+  let res = await fetch('/api/movimientos');
+  movimientos = await res.json();
   movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
   const tbody = document.getElementById("lista-movimientos");
   const mesSeleccionado = document.getElementById("filtroMes")?.value || "Todos";
