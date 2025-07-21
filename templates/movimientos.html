@@ -10,7 +10,14 @@
 <body>
   <header>
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
-    {% include 'navbar.html' %}
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('index') }}">Inicio</a></li>
+        <li><a href="{{ url_for('movimientos') }}">Movimientos</a></li>
+        <li><a href="{{ url_for('estadisticas') }}">Estadísticas</a></li>
+        <li><a href="{{ url_for('contactos') }}">Contactos</a></li>
+      </ul>
+    </nav>
   </header>
 
 <h1>Movimientos Registrados</h1>

@@ -18,61 +18,63 @@
 /* =========================
    HEADER Y NAVEGACIÓN
    ========================= */
+
 header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 10px 0;
-  background-color: #fff;
+  padding: 10px 20px;
+  background-color: #ffffff;
+  height: 90px;         /* Igual que el logo */
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  position: fixed;
-  top: 0;
+  position: fixed;       /* <-- Esto lo fija arriba */
+  top: 0;                /* <-- Esto lo pone en la parte superior */
   width: 100%;
   border-bottom: 5px solid #ddd;
   z-index: 3000;
 }
 
 header img {
-  height: 70px;
-  width: auto;
-  margin: 0 auto 10px auto;
-  display: block;
+  height: 150px;       /* Altura del logo */
+  width: auto;        /* Mantiene proporción */
+  margin-right: 200px; /* Espacio a la derecha */
+  margin-left: 100px;  /*Epacio a la izquierda */
+}
+
+header a {
+  display: inline-block;
+  line-height: 0;
 }
 
 nav {
   background-color: #fff;
-  padding: 0;
+  padding: 10px 0;
+  text-align: center;
   width: 100%;
-  border-bottom: 1px solid #eee;
 }
 
 nav ul {
   list-style: none;
   display: flex;
-  justify-content: center;
-  gap: 30px;
+  gap: 20px;
   margin: 0;
   padding: 0;
 }
 
 nav ul li {
   display: inline;
-  margin: 0;
+  margin: 0 20px;
 }
 
 nav ul li a {
-  color: #333;
+  color: #000;
   text-decoration: none;
   font-weight: bold;
-  font-size: 1.1em;
-  padding: 10px 18px;
-  border-radius: 6px;
-  transition: background 0.2s, color 0.2s;
+  transition: color 0.2s;
 }
 
-nav ul li a:hover, nav ul li a.active {
-  background: #007bff;
-  color: #fff;
+nav ul li a:hover {
+  color: #007bff;
+  text-decoration: underline;
 }
 
 body {
@@ -81,12 +83,12 @@ body {
   padding: 0;
   background: #f7f7f7;
   font-size: 14px;
-  padding-top: 120px; /* ajustado para header más pequeño */
+  padding-top: 150px; /* igual a la altura del header */
 }
 
 .inicio-titulo {
-  margin-top: 40px;
-  font-size: 28px;
+  margin-top: 150px; /* o el valor que desees */
+  font-size: 28px;  /* o el tamaño que prefieras */
   text-align: center;
 }
 
