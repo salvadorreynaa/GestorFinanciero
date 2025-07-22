@@ -140,16 +140,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const nuevoValor = input.value.trim();
             if (!nuevoValor || nuevoValor === valorAntiguo) return cargarListaOpciones();
 
-            const url = modoOpciones === "empresa" ? '/api/empresas' : '/api/tipos_movimiento';
-            const body = modoOpciones === "empresa"
-              ? { antiguo: valorAntiguo, nuevo: nuevoValor }
-              : { antiguo: valorAntiguo, nuevo: nuevoValor, tipo: tipoOpciones };
-
-            fetch(url, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body)
-            }).then(() => cargarListaOpciones());
+            if (modoOpciones === "empresa") {
+              fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: nuevoValor })
+              }).then(() => cargarListaOpciones());
+            } else if (modoOpciones === "tipo") {
+              fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}?tipo=${tipoOpciones}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: nuevoValor })
+              }).then(() => cargarListaOpciones());
+            }
           }
           if (e.key === "Escape") {
             editando = false;
@@ -165,17 +168,60 @@ document.addEventListener("DOMContentLoaded", () => {
     listaOpciones.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
       btn.onclick = function () {
         const valor = btn.dataset.valor;
-        if (!confirm(`¿Seguro que deseas eliminar "${valor}"?`)) return;
-
-        const url = modoOpciones === "empresa" ? `/api/empresas/${encodeURIComponent(valor)}` : `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
-
-        fetch(url, { method: 'DELETE' })
-          .then(() => {
-            if (modoOpciones === "empresa") cargarEmpresas();
-            cargarListaOpciones();
-          });
+        mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`).then(confirmado => {
+          if (!confirmado) return;
+          const url = modoOpciones === "empresa" ? `/api/empresas/${encodeURIComponent(valor)}` : `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
+          fetch(url, { method: 'DELETE' })
+            .then(() => {
+              if (modoOpciones === "empresa") cargarEmpresas();
+              cargarListaOpciones();
+            });
+        });
       };
     });
+  // Modal de confirmación personalizado
+  function mostrarConfirmacionEliminar(mensaje) {
+    return new Promise(resolve => {
+      let modal = document.getElementById('modal-confirmar-eliminar');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-confirmar-eliminar';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.background = 'rgba(0,0,0,0.3)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+          <div style="background:#fff;padding:24px 32px;border-radius:8px;box-shadow:0 2px 16px #0002;text-align:center;min-width:260px;max-width:90vw;">
+            <div id="mensaje-confirmar-eliminar" style="margin-bottom:18px;font-size:1.1em;"></div>
+            <button id="btn-confirmar-si" style="margin-right:16px;" class="btn btn-danger">Sí</button>
+            <button id="btn-confirmar-no" class="btn btn-secondary">No</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+      const msg = modal.querySelector('#mensaje-confirmar-eliminar');
+      const btnSi = modal.querySelector('#btn-confirmar-si');
+      const btnNo = modal.querySelector('#btn-confirmar-no');
+      msg.textContent = mensaje;
+      modal.style.display = 'flex';
+      function cerrar(res) {
+        modal.style.display = 'none';
+        btnSi.removeEventListener('click', onSi);
+        btnNo.removeEventListener('click', onNo);
+        resolve(res);
+      }
+      function onSi() { cerrar(true); }
+      function onNo() { cerrar(false); }
+      btnSi.addEventListener('click', onSi);
+      btnNo.addEventListener('click', onNo);
+    });
+  }
   }
 
   function cargarEmpresas() {
