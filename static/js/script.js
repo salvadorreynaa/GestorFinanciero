@@ -4,15 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Referencias a elementos del DOM (todas al inicio)
   const formulario = document.getElementById("formulario");
   // ...existing code...
+  if (activarMultiples && opcionesMultiples && recordatorioInicio && mesFinMultiple && explicacionMultiples && inputFecha) {
+    activarMultiples.addEventListener("change", () => {
+      if (activarMultiples.checked) {
+        opcionesMultiples.style.display = "block";
+        actualizarRecordatorioYExplicacion();
       } else {
         opcionesMultiples.style.display = "none";
         explicacionMultiples.textContent = "";
       }
     });
-
     inputFecha.addEventListener("change", actualizarRecordatorioYExplicacion);
     mesFinMultiple.addEventListener("change", actualizarRecordatorioYExplicacion);
-
     function actualizarRecordatorioYExplicacion() {
       const fechaInicio = inputFecha.value;
       if (!fechaInicio) {
@@ -22,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const [anioInicio, mesInicio, diaInicio] = fechaInicio.split("-");
       recordatorioInicio.textContent = `La fecha de inicio es el ${diaInicio}/${mesInicio}/${anioInicio}.`;
-
       const mesFin = mesFinMultiple.value;
       if (mesFin) {
         const [anioFin, mesFinNum] = mesFin.split("-");
@@ -106,45 +108,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // variables DOM ya declaradas arriba
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
 
-  let modoOpciones = ""; // "empresa" o "tipo"
-  let tipoOpciones = ""; // "ingreso" o "egreso" (solo para tipo de movimiento)
-
-  document.getElementById("btn-agregar-empresa").addEventListener("click", () => {
-    modoOpciones = "empresa";
-    tituloOpciones.textContent = "Empresas";
-    inputNuevaOpcion.placeholder = "Nueva empresa...";
-    inputNuevaOpcion.value = "";
-    cargarListaOpciones();
-    modalOpciones.style.display = "flex";
-    inputNuevaOpcion.focus();
-  });
-
-  document.getElementById("btn-agregar-tipo").addEventListener("click", () => {
-    modoOpciones = "tipo";
-    // Por defecto, usa el tipo seleccionado en el formulario
-    tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
-    tituloOpciones.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
-    inputNuevaOpcion.placeholder = "Nuevo tipo...";
-    inputNuevaOpcion.value = "";
-    cargarListaOpciones();
-    modalOpciones.style.display = "flex";
-    inputNuevaOpcion.focus();
-  });
-
-  if (btnCerrarOpciones && modalOpciones) {
-    btnCerrarOpciones.addEventListener("click", () => {
-      modalOpciones.style.display = "none";
+  // Abrir modal de tipo de movimiento desde el botón
+  const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
+  // ...existing code...
+  if (btnAgregarTipo && modalAgregarTipo) {
+    btnAgregarTipo.addEventListener("click", () => {
+      modalAgregarTipo.style.display = "flex";
     });
   }
-  modalOpciones.addEventListener("click", (e) => {
-    if (e.target === modalOpciones) modalOpciones.style.display = "none";
-  });
-
-  btnGuardarOpcion.addEventListener("click", guardarOpcion);
-
-  inputNuevaOpcion.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") guardarOpcion();
-  });
+  if (btnCerrarModalAgregarTipo && modalAgregarTipo) {
+    btnCerrarModalAgregarTipo.addEventListener("click", () => {
+      modalAgregarTipo.style.display = "none";
+    });
+  }
 
   async function guardarOpcion() {
     const valor = inputNuevaOpcion.value.trim();
@@ -312,8 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Modal para agregar tipo de movimiento en INICIO
-  const modalAgregarTipo = document.getElementById("modal-agregar-tipo-movimiento");
-  const btnCerrarModalAgregarTipo = document.getElementById("btn-cerrar-modal-agregar-tipo");
+  // ...existing code...
   if (btnAgregarTipo) {
     btnAgregarTipo.onclick = function() {
       modalAgregarTipo.style.display = "flex";
