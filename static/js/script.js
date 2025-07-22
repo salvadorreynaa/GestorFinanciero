@@ -1,7 +1,30 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
   // ...existing code...
-  // Definición de cargarEmpresas y llamada, después de inicializar selectEmpresa
+  // --- Referencias al DOM ---
+  const formulario = document.getElementById("formulario");
+  const tipoSelect = document.getElementById("tipo");
+  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  const selectEmpresa = document.getElementById("empresa");
+  const activarMultiples = document.getElementById("activar-multiples");
+  const opcionesMultiples = document.getElementById("opciones-multiples");
+  const recordatorioInicio = document.getElementById("recordatorio-inicio");
+  const mesFinMultiple = document.getElementById("mes-fin-multiple");
+  const explicacionMultiples = document.getElementById("explicacion-multiples");
+  const inputFecha = document.getElementById("fecha");
+
+  // --- Modal de opciones ---
+  const modalOpciones = document.getElementById("modal-opciones");
+  const tituloOpciones = document.getElementById("modal-opciones-titulo");
+  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  const listaOpciones = document.getElementById("lista-opciones");
+  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
+
+  let modoOpciones = "";
+  let tipoOpciones = "";
+
+  // Definición única de cargarEmpresas
   function cargarEmpresas() {
     fetch('/api/empresas')
       .then(res => res.json())
@@ -24,29 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Llamada a cargarEmpresas después de definirla y de inicializar selectEmpresa
   cargarEmpresas();
-  // ...existing code...
-
-  function cargarEmpresas() {
-    fetch('/api/empresas')
-      .then(res => res.json())
-      .then(empresas => {
-        selectEmpresa.innerHTML = '';
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Seleccionar...';
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        selectEmpresa.appendChild(defaultOption);
-        empresas.forEach(empresa => {
-          const option = document.createElement('option');
-          option.value = empresa.nombre;
-          option.textContent = empresa.nombre;
-          selectEmpresa.appendChild(option);
-        });
-      });
-  }
-  // ...existing code...
-  // (después de inicializar todas las variables DOM)
 
   function actualizarOpcionesTipoMovimiento() {
     const tipo = tipoSelect.value;
