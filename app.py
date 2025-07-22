@@ -195,23 +195,30 @@ def api_movimientos_delete(id):
 # --- API endpoints para empresas ---
 @app.route('/api/empresas/<nombre>', methods=['DELETE'])
 def api_empresa_delete(nombre):
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
         # Primero verificar si la empresa tiene movimientos
-        cur.execute('SELECT COUNT(*) FROM movimientos WHERE empresa = %s;', (nombre,))
+        cur.execute('SELECT COUNT(*) FROM movimientos WHERE empresa_id IN (SELECT id FROM empresas WHERE nombre = %s);', (nombre,))
         count = cur.fetchone()[0]
         
         if count > 0:
+            cur.close()
+            conn.close()
             return jsonify({
                 'status': 'error',
                 'error': 'No se puede eliminar la empresa porque tiene movimientos asociados'
             }), 400
         
         # Si no tiene movimientos, proceder a eliminar
-        cur.execute('DELETE FROM empresas WHERE nombre = %s;', (nombre,))
-        if cur.rowcount == 0:
+        cur.execute('DELETE FROM empresas WHERE nombre = %s RETURNING id;', (nombre,))
+        deleted = cur.fetchone()
+        
+        if not deleted:
+            cur.close()
+            conn.close()
             return jsonify({
                 'status': 'error',
                 'error': 'Empresa no encontrada'
@@ -221,17 +228,18 @@ def api_empresa_delete(nombre):
         cur.close()
         conn.close()
         
-        return jsonify({'status': 'ok'})
+        return jsonify({'status': 'ok', 'message': 'Empresa eliminada correctamente'})
         
     except Exception as e:
-        print('Error al eliminar empresa:', e)
-        if 'conn' in locals():
+        print('Error al eliminar empresa:', str(e))
+        if conn:
             conn.rollback()
-            cur.close()
+            if 'cur' in locals() and cur:
+                cur.close()
             conn.close()
         return jsonify({
             'status': 'error',
-            'error': str(e)
+            'error': 'Error al eliminar la empresa: ' + str(e)
         }), 500
 
 @app.route('/api/movimientos', methods=['POST'])

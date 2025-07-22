@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const explicacionMultiples = document.getElementById("explicacion-multiples");
   const inputFecha = document.getElementById("fecha");
   const modalOpciones = document.getElementById("modal-opciones");
-  if (modalOpciones) modalOpciones.style.zIndex = '1000';  // Aseguramos que tenga un z-index menor
+  modalOpciones?.style?.setProperty('z-index', '1000');  // Aseguramos que tenga un z-index menor
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
   const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
   const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
@@ -165,25 +165,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const valor = btn.dataset.valor;
         mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`).then(confirmado => {
           if (!confirmado) return;
-          const url = modoOpciones === "empresa" ? `/api/empresas/${encodeURIComponent(valor)}` : `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
+          
+          const url = modoOpciones === "empresa" ? 
+            `/api/empresas/${encodeURIComponent(valor)}` : 
+            `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
+          
           fetch(url, { method: 'DELETE' })
-            .then(res => res.json().then(data => ({status: res.status, data})))
-            .then(({status, data}) => {
-              if (status === 400) {
-                alert(data.error || 'No se puede eliminar porque tiene movimientos asociados');
-                return;
+            .then(async res => {
+              const text = await res.text();
+              try {
+                const data = JSON.parse(text);
+                if (!data.status || data.status === 'error') {
+                  throw new Error(data.error || 'Error al eliminar');
+                }
+                if (modoOpciones === "empresa") cargarEmpresas();
+                cargarListaOpciones();
+                if (modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();
+              } catch (e) {
+                throw new Error('Error al eliminar: ' + text);
               }
-              if (status === 404) {
-                alert(data.error || 'No se encontró el elemento a eliminar');
-                return;
-              }
-              if (status !== 200) {
-                alert(data.error || 'Error al eliminar');
-                return;
-              }
-              if (modoOpciones === "empresa") cargarEmpresas();
-              cargarListaOpciones();
-              if (modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert(error.message || 'Error al eliminar. Por favor, intenta de nuevo.');
             });
         });
       };
