@@ -1,5 +1,33 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
+  // Actualiza las opciones de tipo de movimiento según el tipo seleccionado
+  tipoSelect.addEventListener('change', actualizarOpcionesTipoMovimiento);
+
+  function actualizarOpcionesTipoMovimiento() {
+    const tipo = tipoSelect.value;
+    fetch(`/api/tipos_movimiento?tipo=${tipo}`)
+      .then(res => res.json())
+      .then(tipos => {
+        // Limpia el input y el datalist si existe
+        inputTipoMovimiento.value = '';
+        let datalist = document.getElementById('datalist-tipo-movimiento');
+        if (!datalist) {
+          datalist = document.createElement('datalist');
+          datalist.id = 'datalist-tipo-movimiento';
+          inputTipoMovimiento.setAttribute('list', 'datalist-tipo-movimiento');
+          document.body.appendChild(datalist);
+        }
+        datalist.innerHTML = '';
+        tipos.forEach(tipoObj => {
+          const option = document.createElement('option');
+          option.value = tipoObj.nombre;
+          datalist.appendChild(option);
+        });
+      });
+  }
+
+  // Inicializa las opciones al cargar la página
+  actualizarOpcionesTipoMovimiento();
   let guardando = false;
 
   // --- Referencias al DOM ---
@@ -195,9 +223,9 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = 'flex';
         modal.style.alignItems = 'center';
         modal.style.justifyContent = 'center';
-        modal.style.zIndex = '9999';
+        modal.style.zIndex = '99999'; // z-index mayor para que siempre esté delante
         modal.innerHTML = `
-          <div style="background:#fff;padding:24px 32px;border-radius:8px;box-shadow:0 2px 16px #0002;text-align:center;min-width:260px;max-width:90vw;">
+          <div style="background:#fff;padding:24px 32px;border-radius:8px;box-shadow:0 2px 16px #0002;text-align:center;min-width:260px;max-width:90vw;z-index:99999;">
             <div id="mensaje-confirmar-eliminar" style="margin-bottom:18px;font-size:1.1em;"></div>
             <button id="btn-confirmar-si" style="margin-right:16px;" class="btn btn-danger">Sí</button>
             <button id="btn-confirmar-no" class="btn btn-secondary">No</button>
@@ -229,6 +257,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.json())
       .then(empresas => {
         selectEmpresa.innerHTML = '';
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Seleccionar...';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        selectEmpresa.appendChild(defaultOption);
         empresas.forEach(empresa => {
           const option = document.createElement('option');
           option.value = empresa.nombre;
