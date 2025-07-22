@@ -432,6 +432,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Modal para agregar tipo de movimiento en INICIO
+  const modalAgregarTipo = document.getElementById("modal-agregar-tipo-movimiento");
+  const btnCerrarModalAgregarTipo = document.getElementById("btn-cerrar-modal-agregar-tipo");
+  if (btnAgregarTipo) {
+    btnAgregarTipo.onclick = function() {
+      modalAgregarTipo.style.display = "flex";
+    };
+  }
+  if (btnCerrarModalAgregarTipo) {
+    btnCerrarModalAgregarTipo.onclick = function() {
+      modalAgregarTipo.style.display = "none";
+    };
+  }
+  const formAgregarTipo = document.getElementById("form-agregar-tipo-movimiento");
+  if (formAgregarTipo) {
+    formAgregarTipo.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById("nuevo-tipo-nombre").value.trim();
+      const tipo = document.getElementById("nuevo-tipo-tipo").value;
+      if (!nombre) return alert("Debes ingresar un nombre");
+      await fetch("/api/tipos_movimiento", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({nombre, tipo})
+      });
+      modalAgregarTipo.style.display = "none";
+      // Recarga las opciones de tipo de movimiento si tienes esa función
+      if (typeof cargarTiposMovimiento === "function") await cargarTiposMovimiento();
+      // Muestra notificación si tienes esa función
+      if (typeof mostrarToast === "function") mostrarToast("✅ Tipo de movimiento agregado");
+    });
+  }
+
   // Mostrar todas las opciones de tipo de movimiento al hacer click o focus
   if (inputTipoMovimiento && window.Awesomplete) {
     inputTipoMovimiento.addEventListener("focus", function() {

@@ -152,7 +152,25 @@
   </div>
 </div>
 
-
+<!-- Modal para agregar tipo de movimiento en INICIO -->
+<div id="modal-agregar-tipo-movimiento" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%;">
+    <h3>Agregar Tipo de Movimiento</h3>
+    <form id="form-agregar-tipo-movimiento">
+      <label for="nuevo-tipo-nombre">Nombre:</label>
+      <input id="nuevo-tipo-nombre" type="text" required /><br><br>
+      <label for="nuevo-tipo-tipo">Tipo:</label>
+      <select id="nuevo-tipo-tipo" required>
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+      </select><br><br>
+      <div class="botones">
+        <button type="submit">Agregar</button>
+        <button type="button" id="btn-cerrar-modal-agregar-tipo">Salir</button>
+      </div>
+    </form>
+  </div>
+</div>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>

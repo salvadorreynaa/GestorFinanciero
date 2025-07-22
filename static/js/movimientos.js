@@ -397,6 +397,7 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
   mostrarToast("✅ Movimiento editado correctamente.");
 });
 
+
 // Filtros y eventos globales
 const filtroMes = document.getElementById("filtroMes");
 const filtroAño = document.getElementById("filtroAño");
