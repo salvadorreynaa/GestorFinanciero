@@ -167,7 +167,20 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!confirmado) return;
           const url = modoOpciones === "empresa" ? `/api/empresas/${encodeURIComponent(valor)}` : `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
           fetch(url, { method: 'DELETE' })
-            .then(() => {
+            .then(res => res.json().then(data => ({status: res.status, data})))
+            .then(({status, data}) => {
+              if (status === 400) {
+                alert(data.error || 'No se puede eliminar porque tiene movimientos asociados');
+                return;
+              }
+              if (status === 404) {
+                alert(data.error || 'No se encontró el elemento a eliminar');
+                return;
+              }
+              if (status !== 200) {
+                alert(data.error || 'Error al eliminar');
+                return;
+              }
               if (modoOpciones === "empresa") cargarEmpresas();
               cargarListaOpciones();
               if (modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();

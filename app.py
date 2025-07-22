@@ -192,6 +192,48 @@ def api_movimientos_delete(id):
     conn.close()
     return jsonify({'status': 'ok'})
 
+# --- API endpoints para empresas ---
+@app.route('/api/empresas/<nombre>', methods=['DELETE'])
+def api_empresa_delete(nombre):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Primero verificar si la empresa tiene movimientos
+        cur.execute('SELECT COUNT(*) FROM movimientos WHERE empresa = %s;', (nombre,))
+        count = cur.fetchone()[0]
+        
+        if count > 0:
+            return jsonify({
+                'status': 'error',
+                'error': 'No se puede eliminar la empresa porque tiene movimientos asociados'
+            }), 400
+        
+        # Si no tiene movimientos, proceder a eliminar
+        cur.execute('DELETE FROM empresas WHERE nombre = %s;', (nombre,))
+        if cur.rowcount == 0:
+            return jsonify({
+                'status': 'error',
+                'error': 'Empresa no encontrada'
+            }), 404
+            
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'status': 'ok'})
+        
+    except Exception as e:
+        print('Error al eliminar empresa:', e)
+        if 'conn' in locals():
+            conn.rollback()
+            cur.close()
+            conn.close()
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
 @app.route('/api/movimientos', methods=['POST'])
 def api_movimientos_post():
     try:
