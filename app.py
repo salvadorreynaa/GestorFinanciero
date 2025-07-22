@@ -74,42 +74,38 @@ def api_estadisticas():
         año = request.args.get('año')
         conn = get_db_connection()
         cur = conn.cursor()
+        
+        # Base query with all necessary fields
         query = '''
-            SELECT m.tipo_id, t.nombre, m.monto, m.fecha
-            FROM movimientos m
-            LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
+            SELECT tipo, monto, estado, mes, año 
+            FROM movimientos 
+            WHERE 1=1
         '''
-        cur.execute(query)
+        params = []
+        
+        # Add filters if provided
+        if mes and año and mes != 'Todos' and año != 'Todos':
+            query += ' AND mes = %s AND año = %s'
+            params.extend([mes, año])
+            
+        cur.execute(query, params)
         rows = cur.fetchall()
+        
         ingresos = egresos = cobrado = porCobrar = porPagar = 0
-        for tipo_id, tipo_nombre, monto, fecha in rows:
-            # Filtrar por mes y año si se pasan como parámetros
-            tipo_nombre = (tipo_nombre or '').strip().lower()
-            mes_db = ''
-            año_db = ''
-            if fecha:
-                # Si es datetime, extrae mes y año
-                try:
-                    mes_db = fecha.strftime('%B')
-                    año_db = str(fecha.year)
-                except Exception:
-                    # Si es string tipo 'YYYY-MM-DD'
-                    fecha_str = str(fecha)
-                    partes = fecha_str.split('-')
-                    if len(partes) == 3:
-                        año_db = partes[0]
-                        mes_num = int(partes[1])
-                        meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-                        mes_db = meses[mes_num-1]
-            if mes and año:
-                if mes_db != mes or año_db != año:
-                    continue
-            if tipo_nombre == 'ingreso':
-                ingresos += float(monto) if monto is not None else 0.0
-                cobrado += float(monto) if monto is not None else 0.0
-            elif tipo_nombre == 'egreso':
-                egresos += float(monto) if monto is not None else 0.0
-                porPagar += float(monto) if monto is not None else 0.0
+        
+        for tipo, monto, estado, _, _ in rows:
+            if monto is not None:
+                monto = float(monto)
+                if tipo == 'ingreso':
+                    ingresos += monto
+                    if estado == 'Cobrado':
+                        cobrado += monto
+                    elif estado == 'Pendiente':
+                        porCobrar += monto
+                elif tipo == 'egreso':
+                    egresos += monto
+                    if estado == 'Pendiente':
+                        porPagar += monto
         disponible = ingresos - egresos
         cur.close()
         conn.close()
@@ -197,7 +193,110 @@ def api_movimientos_delete(id):
 def api_movimientos_post():
     try:
         data = request.get_json()
+        descripcion = data.get('descripcion')
+        monto = data.get('monto')
+        fecha = data.get('fecha')
+        mes = data.get('mes')
+        año = data.get('año')
         tipo = data.get('tipo')
+        tipoMovimiento = data.get('tipoMovimiento')
+        empresa = data.get('empresa')
+        estado = data.get('estado', 'Pendiente')
+
+        if not all([descripcion, monto, tipo, tipoMovimiento]):
+            return jsonify({'error': 'Faltan campos requeridos'}), 400
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insertar o obtener empresa
+        if empresa:
+            cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
+            empresa_id = cur.fetchone()
+            if not empresa_id:
+                cur.execute('SELECT id FROM empresas WHERE nombre = %s;', (empresa,))
+                empresa_id = cur.fetchone()
+            empresa_id = empresa_id[0] if empresa_id else None
+        else:
+            empresa_id = None
+
+        # Insertar o obtener tipo de movimiento
+        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', 
+                   (tipoMovimiento, tipo))
+        tipo_id = cur.fetchone()
+        if not tipo_id:
+            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre = %s;', (tipoMovimiento,))
+            tipo_id = cur.fetchone()
+        tipo_id = tipo_id[0] if tipo_id else None
+
+        # Insertar el movimiento
+        cur.execute('''
+            INSERT INTO movimientos 
+            (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa_id, tipo_id, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        ''', (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa_id, tipo_id, estado))
+
+        movimiento_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            'id': movimiento_id,
+            'status': 'ok',
+            'message': 'Movimiento creado exitosamente'
+        })
+    except Exception as e:
+        print('Error al crear movimiento:', e)
+        if 'conn' in locals():
+            conn.rollback()
+            cur.close()
+            conn.close()
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+    try:
+        data = request.get_json()
+        descripcion = data.get('descripcion')
+        monto = data.get('monto')
+        fecha = data.get('fecha')
+        mes = data.get('mes')
+        año = data.get('año')
+        tipo = data.get('tipo')
+        tipoMovimiento = data.get('tipoMovimiento')
+        empresa = data.get('empresa')
+        estado = data.get('estado', 'Pendiente')
+
+        if not all([descripcion, monto, fecha, mes, año, tipo, tipoMovimiento]):
+            return jsonify({'error': 'Faltan campos requeridos'}), 400
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insertar empresa si no existe
+        if empresa:
+            cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING;', (empresa,))
+
+        # Insertar el movimiento
+        cur.execute('''
+            INSERT INTO movimientos 
+            (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        ''', (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa, estado))
+
+        id_movimiento = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            'id': id_movimiento,
+            'status': 'ok',
+            'message': 'Movimiento creado exitosamente'
+        })
         tipo_movimiento = data.get('tipoMovimiento')
         descripcion = data.get('descripcion')
         fecha = data.get('fecha')
