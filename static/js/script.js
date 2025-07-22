@@ -187,7 +187,7 @@
     }
   }
   // Modal para agregar empresa
-  const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
+  // ...existing code...
   const modalAgregarEmpresa = document.getElementById("modal-agregar-empresa");
   const btnCerrarModalAgregarEmpresa = document.getElementById("btn-cerrar-modal-agregar-empresa");
   if (btnAgregarEmpresa && modalAgregarEmpresa) {
