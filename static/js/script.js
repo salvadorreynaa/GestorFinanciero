@@ -1,6 +1,27 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
   // ...existing code...
+
+  function cargarEmpresas() {
+    fetch('/api/empresas')
+      .then(res => res.json())
+      .then(empresas => {
+        selectEmpresa.innerHTML = '';
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Seleccionar...';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        selectEmpresa.appendChild(defaultOption);
+        empresas.forEach(empresa => {
+          const option = document.createElement('option');
+          option.value = empresa.nombre;
+          option.textContent = empresa.nombre;
+          selectEmpresa.appendChild(option);
+        });
+      });
+  }
+  // ...existing code...
   // (después de inicializar todas las variables DOM)
 
   function actualizarOpcionesTipoMovimiento() {
