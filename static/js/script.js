@@ -1,5 +1,54 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Listeners para abrir el modal de opciones ---
+  document.getElementById("btn-agregar-empresa").addEventListener("click", () => {
+    modoOpciones = "empresa";
+    tipoOpciones = "";
+    tituloOpciones.textContent = "Empresas";
+    inputNuevaOpcion.placeholder = "Nueva empresa...";
+    modalOpciones.style.display = "flex";
+    cargarListaOpciones();
+  });
+
+  document.getElementById("btn-agregar-tipo").addEventListener("click", () => {
+    modoOpciones = "tipo";
+    tipoOpciones = tipoSelect.value || "ingreso";
+    tituloOpciones.textContent = `Tipos de Movimiento (${tipoOpciones})`;
+    inputNuevaOpcion.placeholder = "Nuevo tipo de movimiento...";
+    modalOpciones.style.display = "flex";
+    cargarListaOpciones();
+  });
+
+  btnCerrarOpciones.addEventListener("click", () => {
+    modalOpciones.style.display = "none";
+    inputNuevaOpcion.value = "";
+    listaOpciones.innerHTML = "";
+  });
+
+  btnGuardarOpcion.addEventListener("click", () => {
+    const valor = inputNuevaOpcion.value.trim();
+    if (!valor) return;
+    if (modoOpciones === "empresa") {
+      fetch('/api/empresas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: valor })
+      }).then(() => {
+        cargarEmpresas();
+        cargarListaOpciones();
+        inputNuevaOpcion.value = "";
+      });
+    } else if (modoOpciones === "tipo") {
+      fetch('/api/tipos_movimiento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: valor, tipo: tipoOpciones })
+      }).then(() => {
+        cargarListaOpciones();
+        inputNuevaOpcion.value = "";
+      });
+    }
+  });
   // ...existing code...
   // --- Referencias al DOM ---
   const formulario = document.getElementById("formulario");
