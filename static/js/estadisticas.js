@@ -1,6 +1,12 @@
 async function cargarEstadisticas() {
   try {
-    let res = await fetch('/api/estadisticas');
+    const mes = document.getElementById("filtroMes")?.value || "";
+    const año = document.getElementById("filtroAño")?.value || "";
+    let url = '/api/estadisticas';
+    if (mes && año) {
+      url += `?mes=${encodeURIComponent(mes)}&año=${encodeURIComponent(año)}`;
+    }
+    let res = await fetch(url);
     if (!res.ok) throw new Error('Error en el servidor');
     let stats = await res.json();
     document.getElementById("total-ingresos").textContent = `S/ ${stats.ingresos.toFixed(2)}`;

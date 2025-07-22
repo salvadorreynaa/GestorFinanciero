@@ -307,192 +307,66 @@ document.getElementById("input-tipoMovimiento").addEventListener("focus", functi
 // Guardar cambios desde el modal
 document.getElementById("form-editar").addEventListener("submit", async (e) => {
   e.preventDefault();
-
   const id = document.getElementById("input-index").value;
   const tipo = document.getElementById("input-tipo").value.trim();
   const tipoMovimiento = document.getElementById("input-tipoMovimiento").value.trim();
   const descripcion = document.getElementById("input-descripcion").value.trim();
   const fecha = document.getElementById("input-fecha").value.trim();
-  const mes = document.getElementById("input-mes").value.trim();
+  let mes = document.getElementById("input-mes").value.trim();
+  let año = "";
+  if (fecha && fecha.includes("-")) {
+    const partes = fecha.split("-");
+    año = partes[0];
+    if (!mes) {
+      const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      mes = mesesNombres[parseInt(partes[1],10)-1];
+    }
+  }
   const monto = parseFloat(document.getElementById("input-monto").value);
   const empresa = document.getElementById("input-empresa").value.trim();
-
-  // NUEVO: Múltiples movimientos automáticos en edición
-  const activarMultiples = document.getElementById("editar-activar-multiples");
-  const mesFinMultiple = document.getElementById("editar-mes-fin-multiple");
-
   if (isNaN(monto) || monto < 0) {
     alert("Monto inválido");
     return;
   }
-
-  let movimientos = await leerDatos() || [];
-  const index = movimientos.findIndex(mov => mov.id == id);
-  if (index === -1) {
-    alert("Movimiento no encontrado");
-    return;
-  }
-
-  // Si está activado el modo múltiple y hay fecha de fin
-  if (activarMultiples && activarMultiples.checked && mesFinMultiple && mesFinMultiple.value) {
-    const [anioInicio, mesInicio, diaInicio] = fecha.split("-");
-    const [anioFin, mesFinNum] = mesFinMultiple.value.split("-");
-    const movimientosMultiples = [];
-    let y = parseInt(anioInicio, 10);
-    let m = parseInt(mesInicio, 10);
-
-    while (y < parseInt(anioFin, 10) || (y === parseInt(anioFin, 10) && m <= parseInt(mesFinNum, 10))) {
-      const fechaMovimiento = `${y}-${String(m).padStart(2, "0")}-${diaInicio}`;
-      const nombreMes = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-      ][m - 1];
-
-      movimientosMultiples.push({
-        id: Date.now() + movimientosMultiples.length,
-        tipo,
-        tipoMovimiento,
-        descripcion,
-        fecha: fechaMovimiento,
-        mes: nombreMes,
-        año: y,
-        monto,
-        empresa,
-        estado: "Pendiente"
-      });
-
-      m++;
-      if (m > 12) {
-        m = 1;
-        y++;
-      }
-    }
-
-    // Elimina el movimiento original editado
-    movimientos.splice(index, 1);
-    movimientos.push(...movimientosMultiples);
-    await guardarDatos(movimientos);
-    await cargarMovimientos();
-    cerrarModalEditar();
-    return;
-  }
-
-  // Modo normal (edición simple)
-  movimientos[index] = {
-    ...movimientos[index],
-    tipo,
-    tipoMovimiento,
-    descripcion,
-    fecha,
-    mes,
-    monto,
-    empresa
-  };
-
-  await guardarDatos(movimientos);
-  await cargarMovimientos();
-  cerrarModalEditar();
-});
-
-// Cerrar modal al cancelar o al hacer click fuera del contenido
-document.getElementById("btn-cerrar-modal").addEventListener("click", cerrarModalEditar);
-
-function cerrarModalEditar() {
+  await fetch(`/api/movimientos/${id}`, {
+    method: "PATCH",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      tipo,
+      tipoMovimiento,
+      descripcion,
+      fecha,
+      mes,
+      año,
+      monto,
+      empresa
+    })
+  });
   document.getElementById("modal-editar").style.display = "none";
-  limpiarFormularioEditar();
-  if (document.activeElement) document.activeElement.blur();
-}
-
-function limpiarFormularioEditar() {
-  document.getElementById("form-editar").reset();
-}
-
-function mostrarOcultarBotonDeshacer() {
-  const botonDeshacer = document.getElementById("fila-deshacer");
-  if (!botonDeshacer) return;
-  botonDeshacer.style.display = movimientosEliminados.length > 0 ? "table-row" : "none";
-}
-
-async function deshacerEliminacion() {
-  if (movimientosEliminados.length === 0) return;
-
-  let movimientos = await leerDatos() || [];
-  const movRestaurado = movimientosEliminados.pop();
-  movimientos.push(movRestaurado);
-
-  await guardarDatos(movimientos);
   await cargarMovimientos();
-  mostrarOcultarBotonDeshacer();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  // --- Lógica para mostrar/ocultar y explicar movimientos automáticos en edición ---
-  const editarActivarMultiples = document.getElementById("editar-activar-multiples");
-  const editarOpcionesMultiples = document.getElementById("editar-opciones-multiples");
-  const editarRecordatorioInicio = document.getElementById("editar-recordatorio-inicio");
-  const editarMesFinMultiple = document.getElementById("editar-mes-fin-multiple");
-  const editarExplicacionMultiples = document.getElementById("editar-explicacion-multiples");
-  const editarInputFecha = document.getElementById("input-fecha");
-
-  if (editarActivarMultiples && editarOpcionesMultiples && editarRecordatorioInicio && editarMesFinMultiple && editarExplicacionMultiples && editarInputFecha) {
-    editarActivarMultiples.addEventListener("change", () => {
-      if (editarActivarMultiples.checked) {
-        editarOpcionesMultiples.style.display = "block";
-        actualizarRecordatorioYExplicacionEdicion();
-      } else {
-        editarOpcionesMultiples.style.display = "none";
-        editarExplicacionMultiples.textContent = "";
-      }
-    });
-    editarInputFecha.addEventListener("change", actualizarRecordatorioYExplicacionEdicion);
-    editarMesFinMultiple.addEventListener("change", actualizarRecordatorioYExplicacionEdicion);
-
-    function actualizarRecordatorioYExplicacionEdicion() {
-      const fechaInicio = editarInputFecha.value;
-      if (!fechaInicio) {
-        editarRecordatorioInicio.textContent = "Selecciona primero la fecha de inicio.";
-        editarExplicacionMultiples.textContent = "";
-        return;
-      }
-      const [anioInicio, mesInicio, diaInicio] = fechaInicio.split("-");
-      editarRecordatorioInicio.textContent = `La fecha de inicio es el ${diaInicio}/${mesInicio}/${anioInicio}.`;
-
-      const mesFin = editarMesFinMultiple.value;
-      if (mesFin) {
-        const [anioFin, mesFinNum] = mesFin.split("-");
-        const meses = [
-          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ];
-        const nombreMesInicio = meses[parseInt(mesInicio, 10) - 1];
-        const nombreMesFin = meses[parseInt(mesFinNum, 10) - 1];
-        editarExplicacionMultiples.textContent =
-          `Se generará un movimiento el día ${diaInicio} de cada mes, desde ${nombreMesInicio} ${anioInicio} hasta ${nombreMesFin} ${anioFin}, ambos inclusive.`;
-      } else {
-        editarExplicacionMultiples.textContent = "";
-      }
-    }
-  }
-  const filtroMes = document.getElementById("filtroMes");
-  const filtroAño = document.getElementById("filtroAño");
-  const filtroTipoMovimiento = document.getElementById("filtroTipoMovimiento");
-  const filtroEmpresa = document.getElementById("filtroEmpresa");
-
-  if (filtroEmpresa) filtroEmpresa.addEventListener("change", cargarMovimientos);
-  if (filtroMes) filtroMes.addEventListener("change", cargarMovimientos);
-  if (filtroAño) filtroAño.addEventListener("change", cargarMovimientos);
-  if (filtroTipoMovimiento) filtroTipoMovimiento.addEventListener("change", cargarMovimientos);
-
-  window.cambiarEstado = cambiarEstado;
-  window.eliminarMovimiento = eliminarMovimiento;
-  window.deshacerEliminacion = deshacerEliminacion;
-  window.editarMovimiento = editarMovimiento;
-
-  cargarTiposMovimiento();
-  cargarEmpresasFiltro();
-  cargarOpcionesFiltroTipoMovimiento();
-  cargarMovimientos();
+  mostrarToast("✅ Movimiento editado correctamente.");
 });
+
+// Filtros y eventos globales
+const filtroMes = document.getElementById("filtroMes");
+const filtroAño = document.getElementById("filtroAño");
+const filtroTipoMovimiento = document.getElementById("filtroTipoMovimiento");
+const filtroEmpresa = document.getElementById("filtroEmpresa");
+
+if (filtroEmpresa) filtroEmpresa.addEventListener("change", cargarMovimientos);
+if (filtroMes) filtroMes.addEventListener("change", cargarMovimientos);
+if (filtroAño) filtroAño.addEventListener("change", cargarMovimientos);
+if (filtroTipoMovimiento) filtroTipoMovimiento.addEventListener("change", cargarMovimientos);
+
+window.cambiarEstado = cambiarEstado;
+window.eliminarMovimiento = eliminarMovimiento;
+window.deshacerEliminacion = deshacerEliminacion;
+window.editarMovimiento = editarMovimiento;
+
+cargarTiposMovimiento();
+cargarEmpresasFiltro();
+cargarOpcionesFiltroTipoMovimiento();
+cargarMovimientos();
 
 const inputBusquedaDescripcion = document.getElementById("busqueda-descripcion");
 if (inputBusquedaDescripcion) {
