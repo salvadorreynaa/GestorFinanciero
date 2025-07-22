@@ -1,5 +1,28 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Referencias al DOM ---
+  const formulario = document.getElementById("formulario");
+  const tipoSelect = document.getElementById("tipo");
+  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  const selectEmpresa = document.getElementById("empresa");
+  const activarMultiples = document.getElementById("activar-multiples");
+  const opcionesMultiples = document.getElementById("opciones-multiples");
+  const recordatorioInicio = document.getElementById("recordatorio-inicio");
+  const mesFinMultiple = document.getElementById("mes-fin-multiple");
+  const explicacionMultiples = document.getElementById("explicacion-multiples");
+  const inputFecha = document.getElementById("fecha");
+
+  // --- Modal de opciones ---
+  const modalOpciones = document.getElementById("modal-opciones");
+  const tituloOpciones = document.getElementById("modal-opciones-titulo");
+  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  const listaOpciones = document.getElementById("lista-opciones");
+  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
+
+  let modoOpciones = "";
+  let tipoOpciones = "";
+
   // --- Listeners para abrir el modal de opciones ---
   document.getElementById("btn-agregar-empresa").addEventListener("click", () => {
     modoOpciones = "empresa";
@@ -49,29 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
-  // ...existing code...
-  // --- Referencias al DOM ---
-  const formulario = document.getElementById("formulario");
-  const tipoSelect = document.getElementById("tipo");
-  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  const selectEmpresa = document.getElementById("empresa");
-  const activarMultiples = document.getElementById("activar-multiples");
-  const opcionesMultiples = document.getElementById("opciones-multiples");
-  const recordatorioInicio = document.getElementById("recordatorio-inicio");
-  const mesFinMultiple = document.getElementById("mes-fin-multiple");
-  const explicacionMultiples = document.getElementById("explicacion-multiples");
-  const inputFecha = document.getElementById("fecha");
-
-  // --- Modal de opciones ---
-  const modalOpciones = document.getElementById("modal-opciones");
-  const tituloOpciones = document.getElementById("modal-opciones-titulo");
-  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  const listaOpciones = document.getElementById("lista-opciones");
-  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
-
-  let modoOpciones = "";
-  let tipoOpciones = "";
 
   // Definición única de cargarEmpresas
   function cargarEmpresas() {
