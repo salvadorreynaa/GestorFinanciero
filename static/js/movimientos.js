@@ -264,13 +264,18 @@ async function eliminarMovimiento(id) {
   await cargarMovimientos();
 }
 
-// Evento para cerrar el modal de edición
-const btnCerrarModalEditar = document.getElementById("btn-cerrar-modal-editar");
-if (btnCerrarModalEditar) {
-  btnCerrarModalEditar.addEventListener("click", () => {
-    document.getElementById("modal-editar").style.display = "none";
-  });
-}
+document.addEventListener("DOMContentLoaded", function() {
+  // Botón de cerrar modal edición (compatibilidad: busca por clase o id)
+  const modalEditar = document.getElementById("modal-editar");
+  if (modalEditar) {
+    const btnCerrar = modalEditar.querySelector(".btn-cerrar") || document.getElementById("btn-cerrar-modal-editar");
+    if (btnCerrar) {
+      btnCerrar.addEventListener("click", () => {
+        modalEditar.style.display = "none";
+      });
+    }
+  }
+});
 
 async function editarMovimiento(id) {
   const res = await fetch(`/api/movimientos`);
