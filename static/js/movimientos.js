@@ -264,18 +264,42 @@ async function eliminarMovimiento(id) {
   await cargarMovimientos();
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  // Botón de cerrar modal edición (compatibilidad: busca por clase o id)
+// Función para mostrar notificaciones tipo toast
+function mostrarToast(mensaje) {
+  let toast = document.getElementById("toast-notificacion");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast-notificacion";
+    toast.style.position = "fixed";
+    toast.style.bottom = "30px";
+    toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.background = "#333";
+    toast.style.color = "#fff";
+    toast.style.padding = "12px 24px";
+    toast.style.borderRadius = "8px";
+    toast.style.zIndex = "9999";
+    toast.style.fontSize = "1.1em";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = mensaje;
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 2200);
+}
+
+// Botón de cerrar modal edición
+function asignarCerrarModalEditar() {
   const modalEditar = document.getElementById("modal-editar");
   if (modalEditar) {
     const btnCerrar = modalEditar.querySelector(".btn-cerrar") || document.getElementById("btn-cerrar-modal-editar");
     if (btnCerrar) {
-      btnCerrar.addEventListener("click", () => {
+      btnCerrar.onclick = () => {
         modalEditar.style.display = "none";
-      });
+      };
     }
   }
-});
+}
+document.addEventListener("DOMContentLoaded", asignarCerrarModalEditar);
 
 async function editarMovimiento(id) {
   const res = await fetch(`/api/movimientos`);
@@ -296,9 +320,10 @@ async function editarMovimiento(id) {
   selectTipo.value = mov.tipo;
   document.getElementById("input-tipoMovimiento").value = mov.tipoMovimiento;
   document.getElementById("input-descripcion").value = mov.descripcion;
-  // Solo asigna la fecha si existe, no obliga a reingresarla
+  // Asigna solo la parte de fecha yyyy-MM-dd
   if (mov.fecha) {
-    document.getElementById("input-fecha").value = mov.fecha;
+    let soloFecha = mov.fecha.split("T")[0];
+    document.getElementById("input-fecha").value = soloFecha;
   }
   document.getElementById("input-mes").value = mov.mes;
   document.getElementById("input-monto").value = mov.monto;
