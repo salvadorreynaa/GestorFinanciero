@@ -384,3 +384,27 @@ def api_tipos_movimiento_rename(nombre):
     cur.close()
     conn.close()
     return jsonify({'status': 'ok'})
+
+@app.route('/api/movimientos/<int:id>', methods=['PATCH'])
+def api_movimientos_patch(id):
+    data = request.get_json()
+    campos = []
+    valores = []
+    for campo in ['tipo', 'tipoMovimiento', 'descripcion', 'fecha', 'mes', 'año', 'monto', 'empresa']:
+        if campo in data:
+            campos.append(f"{campo}=%s")
+            valores.append(data[campo])
+    if not campos:
+        return jsonify({'status': 'error', 'error': 'No hay campos para actualizar'}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        sql = f"UPDATE movimientos SET {', '.join(campos)} WHERE id=%s;"
+        cur.execute(sql, (*valores, id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        print('Error al editar movimiento:', e)
+        return jsonify({'status': 'error', 'error': str(e)}), 500
