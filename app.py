@@ -159,7 +159,12 @@ def api_movimientos():
                 'descripcion': descripcion or '',
                 'monto': float(monto) if monto is not None else 0.0
             })
-# Endpoint para cambiar el estado de un movimiento
+        cur.close()
+        conn.close()
+        return jsonify(movimientos)
+    except Exception as e:
+        print('Error en /api/movimientos:', e)
+        return jsonify([]), 200
 @app.route('/api/movimientos/<int:id>/estado', methods=['PATCH'])
 def api_movimiento_estado(id):
     data = request.get_json()
@@ -177,12 +182,6 @@ def api_movimiento_estado(id):
     except Exception as e:
         print('Error al cambiar estado:', e)
         return jsonify({'status': 'error', 'error': str(e)}), 500
-        cur.close()
-        conn.close()
-        return jsonify(movimientos)
-    except Exception as e:
-        print('Error en /api/movimientos:', e)
-        return jsonify([]), 200
 
 @app.route('/api/movimientos/<int:id>', methods=['DELETE'])
 def api_movimientos_delete(id):
