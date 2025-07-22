@@ -3,6 +3,8 @@ let guardando = false;
 document.addEventListener("DOMContentLoaded", () => {
   // Referencias a elementos del DOM (todas al inicio)
   const formulario = document.getElementById("formulario");
+  const modalAgregarTipo = document.getElementById("modal-agregar-tipo-movimiento");
+  const btnCerrarModalAgregarTipo = document.getElementById("btn-cerrar-modal-agregar-tipo");
   const tipoSelect = document.getElementById("tipo");
   const inputTipoMovimiento = document.getElementById("tiposmovimientos");
   const selectEmpresa = document.getElementById("empresa");
