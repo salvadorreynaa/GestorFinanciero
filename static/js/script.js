@@ -1,14 +1,13 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 document.addEventListener("DOMContentLoaded", () => {
-  // Actualiza las opciones de tipo de movimiento según el tipo seleccionado
-  tipoSelect.addEventListener('change', actualizarOpcionesTipoMovimiento);
+  // ...existing code...
+  // (después de inicializar todas las variables DOM)
 
   function actualizarOpcionesTipoMovimiento() {
     const tipo = tipoSelect.value;
     fetch(`/api/tipos_movimiento?tipo=${tipo}`)
       .then(res => res.json())
       .then(tipos => {
-        // Limpia el input y el datalist si existe
         inputTipoMovimiento.value = '';
         let datalist = document.getElementById('datalist-tipo-movimiento');
         if (!datalist) {
@@ -26,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // Inicializa las opciones al cargar la página
+  tipoSelect.addEventListener('change', actualizarOpcionesTipoMovimiento);
   actualizarOpcionesTipoMovimiento();
   let guardando = false;
 
