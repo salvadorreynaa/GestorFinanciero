@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
 
   // Abrir modal de tipo de movimiento desde el botón
-  const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
+  // ...existing code...
   // ...existing code...
   if (btnAgregarTipo && modalAgregarTipo) {
     btnAgregarTipo.addEventListener("click", () => {
