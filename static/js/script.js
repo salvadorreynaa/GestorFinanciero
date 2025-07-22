@@ -24,8 +24,8 @@
         body: JSON.stringify({nombre})
       });
       modalAgregarEmpresa.style.display = "none";
-      if (typeof cargarEmpresas === "function") await cargarEmpresas();
-      if (typeof mostrarToast === "function") mostrarToast("✅ Empresa agregada");
+      await cargarEmpresas();
+      mostrarToast("✅ Empresa agregada");
     });
   }
 let guardando = false;
