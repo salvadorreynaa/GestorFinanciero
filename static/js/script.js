@@ -1,228 +1,8 @@
-  // Botones para abrir el modal de opciones
-  // ...existing code...
-  // Modal de opciones (empresas y tipos de movimiento)
-  const modalOpciones = document.getElementById("modal-opciones");
-  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
-  const modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
-  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  const listaOpciones = document.getElementById("lista-opciones");
-
-  let modoOpciones = "empresa"; // "empresa" o "tipo"
-  let tipoOpciones = "ingreso"; // "ingreso" o "egreso"
-
-  if (btnAgregarEmpresa) {
-    btnAgregarEmpresa.addEventListener("click", () => {
-      modoOpciones = "empresa";
-      modalOpcionesTitulo.textContent = "Empresas";
-      inputNuevaOpcion.placeholder = "Nueva empresa...";
-      inputNuevaOpcion.value = "";
-      cargarListaOpciones();
-      modalOpciones.style.display = "flex";
-      inputNuevaOpcion.focus();
-    });
-  }
-  if (btnAgregarTipo) {
-    btnAgregarTipo.addEventListener("click", () => {
-      modoOpciones = "tipo";
-      tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
-      modalOpcionesTitulo.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
-      inputNuevaOpcion.placeholder = "Nuevo tipo...";
-      inputNuevaOpcion.value = "";
-      cargarListaOpciones();
-      modalOpciones.style.display = "flex";
-      inputNuevaOpcion.focus();
-    });
-  }
-  btnCerrarOpciones.addEventListener("click", () => {
-    modalOpciones.style.display = "none";
-  });
-  modalOpciones.addEventListener("click", (e) => {
-    if (e.target === modalOpciones) modalOpciones.style.display = "none";
-  });
-  btnGuardarOpcion.addEventListener("click", guardarOpcion);
-  inputNuevaOpcion.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") guardarOpcion();
-  });
-
-  async function cargarListaOpciones() {
-    listaOpciones.innerHTML = "";
-    if (modoOpciones === "empresa") {
-      const res = await fetch("/api/empresas");
-      const empresas = await res.json();
-      empresas.forEach(e => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.alignItems = "center";
-        li.style.justifyContent = "space-between";
-        li.style.padding = "4px 0";
-        li.innerHTML = `
-          <span>${e.nombre}</span>
-          <span>
-            <button class="btn-editar-opcion" title="Editar" data-valor="${e.nombre}">&#9998;</button>
-            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${e.nombre}">&#128465;</button>
-          </span>
-        `;
-        listaOpciones.appendChild(li);
-      });
-      agregarEventosOpciones();
-    } else if (modoOpciones === "tipo") {
-      const res = await fetch(`/api/tipos_movimiento?tipo=${tipoOpciones}`);
-      const tipos = await res.json();
-      tipos.forEach(t => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.alignItems = "center";
-        li.style.justifyContent = "space-between";
-        li.style.padding = "4px 0";
-        li.innerHTML = `
-          <span>${t.nombre}</span>
-          <span>
-            <button class="btn-editar-opcion" title="Editar" data-valor="${t.nombre}">&#9998;</button>
-            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${t.nombre}">&#128465;</button>
-          </span>
-        `;
-        listaOpciones.appendChild(li);
-      });
-      agregarEventosOpciones();
-    }
-  }
-
-  function agregarEventosOpciones() {
-    listaOpciones.querySelectorAll(".btn-editar-opcion").forEach(btn => {
-      btn.onclick = async function() {
-        const li = btn.closest("li");
-        const valorAntiguo = btn.dataset.valor;
-        const span = li.querySelector("span:first-child");
-        if (li.querySelector("input")) return;
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = valorAntiguo;
-        input.style.flex = "1";
-        input.style.marginRight = "8px";
-        span.replaceWith(input);
-        input.focus();
-        input.select();
-        let editando = true;
-        input.addEventListener("keydown", async (e) => {
-          if (e.key === "Enter") {
-            editando = false;
-            await guardarEdicion();
-          }
-          if (e.key === "Escape") {
-            editando = false;
-            cancelarEdicion();
-          }
-        });
-        input.addEventListener("blur", () => {
-          if (editando) cancelarEdicion();
-        });
-        async function guardarEdicion() {
-          const nuevoValor = input.value.trim();
-          if (!nuevoValor || nuevoValor === valorAntiguo) { cancelarEdicion(); return; }
-          if (modoOpciones === "empresa") {
-            await fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nombre: nuevoValor })
-            });
-            cargarListaOpciones();
-            cargarEmpresas();
-          } else if (modoOpciones === "tipo") {
-            await fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nombre: nuevoValor })
-            });
-            cargarListaOpciones();
-            cargarTiposMovimiento();
-          }
-        }
-        function cancelarEdicion() {
-          cargarListaOpciones();
-        }
-      };
-    });
-    listaOpciones.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
-      btn.onclick = async function() {
-        const valor = btn.dataset.valor;
-        const confirmado = confirm(`¿Seguro que deseas eliminar "${valor}"?`);
-        if (!confirmado) return;
-        if (modoOpciones === "empresa") {
-          await fetch(`/api/empresas/${encodeURIComponent(valor)}`, { method: 'DELETE' });
-          cargarListaOpciones();
-          cargarEmpresas();
-        } else if (modoOpciones === "tipo") {
-          await fetch(`/api/tipos_movimiento/${encodeURIComponent(valor)}`, { method: 'DELETE' });
-          cargarListaOpciones();
-          cargarTiposMovimiento();
-        }
-      };
-    });
-  }
-
-  async function guardarOpcion() {
-    const valor = inputNuevaOpcion.value.trim();
-    if (!valor) return;
-    if (modoOpciones === "empresa") {
-      await fetch("/api/empresas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: valor })
-      });
-      cargarListaOpciones();
-      cargarEmpresas();
-      inputNuevaOpcion.value = "";
-      mostrarToast("✅ Empresa agregada");
-    } else if (modoOpciones === "tipo") {
-      await fetch("/api/tipos_movimiento", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: valor, tipo: tipoOpciones })
-      });
-      cargarListaOpciones();
-      cargarTiposMovimiento();
-      inputNuevaOpcion.value = "";
-      mostrarToast("✅ Tipo de movimiento agregado");
-    }
-  }
-  // Modal para agregar empresa
-  // ...existing code...
-  const modalAgregarEmpresa = document.getElementById("modal-agregar-empresa");
-  const btnCerrarModalAgregarEmpresa = document.getElementById("btn-cerrar-modal-agregar-empresa");
-  if (btnAgregarEmpresa && modalAgregarEmpresa) {
-    btnAgregarEmpresa.addEventListener("click", () => {
-      modalAgregarEmpresa.style.display = "flex";
-    });
-  }
-  if (btnCerrarModalAgregarEmpresa && modalAgregarEmpresa) {
-    btnCerrarModalAgregarEmpresa.addEventListener("click", () => {
-      modalAgregarEmpresa.style.display = "none";
-    });
-  }
-  const formAgregarEmpresa = document.getElementById("form-agregar-empresa");
-  if (formAgregarEmpresa) {
-    formAgregarEmpresa.addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const nombre = document.getElementById("nueva-empresa-nombre").value.trim();
-      if (!nombre) return alert("Debes ingresar un nombre");
-      await fetch("/api/empresas", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({nombre})
-      });
-      modalAgregarEmpresa.style.display = "none";
-      await cargarEmpresas();
-      mostrarToast("✅ Empresa agregada");
-    });
-  }
-let guardando = false;
-
 document.addEventListener("DOMContentLoaded", () => {
-  // Referencias a elementos del DOM (todas al inicio)
+document.addEventListener("DOMContentLoaded", () => {
+  // Referencias a elementos del DOM (solo una vez)
+  let guardando = false;
   const formulario = document.getElementById("formulario");
-  const modalAgregarTipo = document.getElementById("modal-agregar-tipo-movimiento");
-  const btnCerrarModalAgregarTipo = document.getElementById("btn-cerrar-modal-agregar-tipo");
   const tipoSelect = document.getElementById("tipo");
   const inputTipoMovimiento = document.getElementById("tiposmovimientos");
   const selectEmpresa = document.getElementById("empresa");
@@ -233,92 +13,107 @@ document.addEventListener("DOMContentLoaded", () => {
   const explicacionMultiples = document.getElementById("explicacion-multiples");
   const inputFecha = document.getElementById("fecha");
   // ...existing code...
-  if (activarMultiples && opcionesMultiples && recordatorioInicio && mesFinMultiple && explicacionMultiples && inputFecha) {
-    activarMultiples.addEventListener("change", () => {
-      if (activarMultiples.checked) {
-        opcionesMultiples.style.display = "block";
-        actualizarRecordatorioYExplicacion();
-      } else {
-        opcionesMultiples.style.display = "none";
-        explicacionMultiples.textContent = "";
-      }
-    });
-    inputFecha.addEventListener("change", actualizarRecordatorioYExplicacion);
-    mesFinMultiple.addEventListener("change", actualizarRecordatorioYExplicacion);
-    function actualizarRecordatorioYExplicacion() {
-      const fechaInicio = inputFecha.value;
-      if (!fechaInicio) {
-        recordatorioInicio.textContent = "Selecciona primero la fecha de inicio.";
-        explicacionMultiples.textContent = "";
-        return;
-      }
-      const [anioInicio, mesInicio, diaInicio] = fechaInicio.split("-");
-      recordatorioInicio.textContent = `La fecha de inicio es el ${diaInicio}/${mesInicio}/${anioInicio}.`;
-      const mesFin = mesFinMultiple.value;
-      if (mesFin) {
-        const [anioFin, mesFinNum] = mesFin.split("-");
-        const meses = [
-          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ];
-        const nombreMesInicio = meses[parseInt(mesInicio, 10) - 1];
-        const nombreMesFin = meses[parseInt(mesFinNum, 10) - 1];
-        explicacionMultiples.textContent =
-          `Se generará un movimiento el día ${diaInicio} de cada mes, desde ${nombreMesInicio} ${anioInicio} hasta ${nombreMesFin} ${anioFin}, ambos inclusive.`;
-      } else {
-        explicacionMultiples.textContent = "";
-      }
-    }
-  }
+});
 
   // Evento submit del formulario para agregar movimiento (único bloque)
-  if (formulario) {
-    formulario.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      if (guardando) return;
-      const tipo = tipoSelect.value;
-      const tipoMovimiento = inputTipoMovimiento.value.trim();
-      const descripcion = document.getElementById("descripcion").value.trim();
-      const fecha = inputFecha.value.trim(); // formato: YYYY-MM-DD
-      let año = "";
-      let mes = "";
-      if (fecha && fecha.includes("-")) {
-        const partes = fecha.split("-");
-        año = partes[0];
-        mes = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][parseInt(partes[1],10)-1];
-      }
-      const monto = parseFloat(document.getElementById("monto").value);
-      const empresa = selectEmpresa.value;
-      if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto) || !empresa) {
-        mostrarToast("Completa todos los campos obligatorios.");
-        return;
-      }
-      guardando = true;
-      try {
-        await fetch("/api/movimientos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-  // ...existing code...
-            tipoMovimiento,
-            descripcion,
-            fecha,
-            mes,
-            año,
-            monto,
-            empresa,
-            estado: "Pendiente"
-          })
+  formulario.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (guardando) return;
+
+    const tipo = tipoSelect.value;
+    const tipoMovimiento = inputTipoMovimiento.value.trim();
+    const descripcion = document.getElementById("descripcion").value.trim();
+    const fecha = inputFecha.value.trim();
+    const mes = document.getElementById("mes").value;
+    const año = document.getElementById("año").value;
+    const monto = parseFloat(document.getElementById("monto").value);
+    const empresa = selectEmpresa.value;
+
+    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) return;
+
+    guardando = true;
+
+    // --- MODO MÚLTIPLE ---
+    if (activarMultiples && activarMultiples.checked && mesFinMultiple && mesFinMultiple.value) {
+      const [anioInicio, mesInicio, diaInicio] = fecha.split("-");
+      const [anioFin, mesFinNum] = mesFinMultiple.value.split("-");
+      const movimientosMultiples = [];
+      let y = parseInt(anioInicio, 10);
+      let m = parseInt(mesInicio, 10);
+
+      while (y < parseInt(anioFin, 10) || (y === parseInt(anioFin, 10) && m <= parseInt(mesFinNum, 10))) {
+        const fechaMovimiento = `${y}-${String(m).padStart(2, "0")}-${diaInicio}`;
+        const nombreMes = [
+          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ][m - 1];
+
+        movimientosMultiples.push({
+          id: Date.now() + movimientosMultiples.length,
+          tipo,
+          tipoMovimiento,
+          descripcion,
+          fecha: fechaMovimiento,
+          mes: nombreMes,
+          año: y,
+          monto,
+          empresa,
+          estado: "Pendiente"
         });
-        formulario.reset();
-        mostrarToast("✅ Movimiento guardado correctamente.");
-      } catch (err) {
-        mostrarToast("Error al guardar el movimiento.");
-      } finally {
-        guardando = false;
+
+        m++;
+        if (m > 12) {
+          m = 1;
+          y++;
+        }
       }
+
+      window.storageAPI.leerDatos().then(movimientos => {
+        movimientos = Array.isArray(movimientos) ? movimientos : [];
+        movimientos.push(...movimientosMultiples);
+        return window.storageAPI.escribirDatos(movimientos);
+      }).then(() => {
+        formulario.reset();
+        actualizarAwesomplete(tipoSelect.value);
+        mostrarToast(`✅ Se guardaron ${movimientosMultiples.length} movimientos correctamente.`);
+      }).catch(err => {
+        console.error(err);
+      }).finally(() => {
+        guardando = false;
+      });
+
+      return; // Detiene aquí si es múltiple
+    }
+
+    // --- MODO NORMAL ---
+    const nuevoMovimiento = {
+      id: Date.now(),
+      tipo,
+      tipoMovimiento,
+      descripcion,
+      fecha,
+      mes,
+      año,
+      monto,
+      empresa,
+      estado: "Pendiente"
+    };
+
+    window.storageAPI.leerDatos().then(movimientos => {
+      movimientos = Array.isArray(movimientos) ? movimientos : [];
+      movimientos.push(nuevoMovimiento);
+      return window.storageAPI.escribirDatos(movimientos);
+    }).then(() => {
+      formulario.reset();
+      actualizarAwesomplete(tipoSelect.value);
+      mostrarToast("✅ Movimiento guardado correctamente.");
+    }).catch(err => {
+      console.error(err);
+    }).finally(() => {
+      guardando = false;
     });
-  }
+  });
 
   // Toast visual
   function mostrarToast(mensaje) {
@@ -334,99 +129,144 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- MODAL DE OPCIONES (EMPRESA O TIPO DE MOVIMIENTO) ---
-  // variables DOM ya declaradas arriba
+  const modalOpciones = document.getElementById("modal-opciones");
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
+  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  const listaOpciones = document.getElementById("lista-opciones");
+  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
 
-  // Abrir modal de tipo de movimiento desde el botón
-  // ...existing code...
-  // ...existing code...
-  if (btnAgregarTipo && modalAgregarTipo) {
-    btnAgregarTipo.addEventListener("click", () => {
-      modalAgregarTipo.style.display = "flex";
-    });
-  }
-  if (btnCerrarModalAgregarTipo && modalAgregarTipo) {
-    btnCerrarModalAgregarTipo.addEventListener("click", () => {
-      modalAgregarTipo.style.display = "none";
-    });
-  }
+  let modoOpciones = ""; // "empresa" o "tipo"
+  let tipoOpciones = ""; // "ingreso" o "egreso" (solo para tipo de movimiento)
 
-  async function guardarOpcion() {
+  document.getElementById("btn-agregar-empresa").addEventListener("click", () => {
+    modoOpciones = "empresa";
+    tituloOpciones.textContent = "Empresas";
+    inputNuevaOpcion.placeholder = "Nueva empresa...";
+    inputNuevaOpcion.value = "";
+    cargarListaOpciones();
+    modalOpciones.style.display = "flex";
+    inputNuevaOpcion.focus();
+  });
+
+  document.getElementById("btn-agregar-tipo").addEventListener("click", () => {
+    modoOpciones = "tipo";
+    // Por defecto, usa el tipo seleccionado en el formulario
+    tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
+    tituloOpciones.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
+    inputNuevaOpcion.placeholder = "Nuevo tipo...";
+    inputNuevaOpcion.value = "";
+    cargarListaOpciones();
+    modalOpciones.style.display = "flex";
+    inputNuevaOpcion.focus();
+  });
+
+  btnCerrarOpciones.addEventListener("click", () => {
+    modalOpciones.style.display = "none";
+  });
+  modalOpciones.addEventListener("click", (e) => {
+    if (e.target === modalOpciones) modalOpciones.style.display = "none";
+  });
+
+  btnGuardarOpcion.addEventListener("click", guardarOpcion);
+
+  inputNuevaOpcion.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") guardarOpcion();
+  });
+
+  function guardarOpcion() {
     const valor = inputNuevaOpcion.value.trim();
     if (!valor) return;
     if (modoOpciones === "empresa") {
-      // Agregar empresa por API
-      await fetch("/api/empresas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: valor })
+      window.storageAPI.leerEmpresas().then(empresas => {
+        if (!empresas.includes(valor)) {
+          empresas.push(valor);
+          empresas.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+          return window.storageAPI.escribirEmpresas(empresas);
+        }
+      }).then(() => {
+        cargarEmpresas();
+        cargarListaOpciones();
+        inputNuevaOpcion.value = "";
       });
-      cargarEmpresas();
-      cargarListaOpciones();
-      inputNuevaOpcion.value = "";
     } else if (modoOpciones === "tipo") {
-      // Agregar tipo de movimiento por API
-      await fetch("/api/tipos_movimiento", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: valor })
-      });
-      cargarTiposMovimiento();
-      cargarListaOpciones();
-      inputNuevaOpcion.value = "";
+      const archivo = tipoOpciones === "egreso" ? "tipoegreso" : "tipoingreso";
+      window.storageAPI[`leer${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`]()
+        .then(tipos => {
+          if (!tipos.includes(valor)) {
+            tipos.push(valor);
+            tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+            return window.storageAPI[`escribir${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`](tipos);
+          }
+        }).then(() => {
+          // Actualiza la lista de Awesomplete
+          if (tipoOpciones === "ingreso") {
+            opcionesIngreso.push(valor);
+            opcionesIngreso.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+          } else {
+            opcionesEgreso.push(valor);
+            opcionesEgreso.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+          }
+          if (tipoSelect.value === tipoOpciones) actualizarAwesomplete(tipoOpciones);
+          cargarListaOpciones();
+          inputNuevaOpcion.value = "";
+        });
     }
   }
 
-  async function cargarListaOpciones() {
+  function cargarListaOpciones() {
     listaOpciones.innerHTML = "";
     if (modoOpciones === "empresa") {
-      const res = await fetch("/api/empresas");
-      const empresas = await res.json();
-      empresas.forEach(e => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.alignItems = "center";
-        li.style.justifyContent = "space-between";
-        li.style.padding = "4px 0";
-        li.innerHTML = `
-          <span>${e.nombre}</span>
-          <span>
-            <button class="btn-editar-opcion" title="Editar" data-valor="${e.nombre}">&#9998;</button>
-            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${e.nombre}">&#128465;</button>
-          </span>
-        `;
-        listaOpciones.appendChild(li);
+      window.storageAPI.leerEmpresas().then(empresas => {
+        empresas.forEach(empresa => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.alignItems = "center";
+          li.style.justifyContent = "space-between";
+          li.style.padding = "4px 0";
+          li.innerHTML = `
+            <span>${empresa}</span>
+            <span>
+              <button class="btn-editar-opcion" title="Editar" data-valor="${empresa}">&#9998;</button>
+              <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${empresa}">&#128465;</button>
+            </span>
+          `;
+          listaOpciones.appendChild(li);
+        });
+        agregarEventosOpciones();
       });
-      agregarEventosOpciones();
     } else if (modoOpciones === "tipo") {
-      const res = await fetch("/api/tipos_movimiento");
-      const tipos = await res.json();
-      tipos.forEach(t => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.alignItems = "center";
-        li.style.justifyContent = "space-between";
-        li.style.padding = "4px 0";
-        li.innerHTML = `
-          <span>${t.nombre}</span>
-          <span>
-            <button class="btn-editar-opcion" title="Editar" data-valor="${t.nombre}">&#9998;</button>
-            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${t.nombre}">&#128465;</button>
-          </span>
-        `;
-        listaOpciones.appendChild(li);
-      });
-      agregarEventosOpciones();
+      const archivo = tipoOpciones === "egreso" ? "tipoegreso" : "tipoingreso";
+      window.storageAPI[`leer${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`]()
+        .then(tipos => {
+          tipos.forEach(tipo => {
+            const li = document.createElement("li");
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.justifyContent = "space-between";
+            li.style.padding = "4px 0";
+            li.innerHTML = `
+              <span>${tipo}</span>
+              <span>
+                <button class="btn-editar-opcion" title="Editar" data-valor="${tipo}">&#9998;</button>
+                <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${tipo}">&#128465;</button>
+              </span>
+            `;
+            listaOpciones.appendChild(li);
+          });
+          agregarEventosOpciones();
+        });
     }
   }
 
   function agregarEventosOpciones() {
     // Editar inline
     listaOpciones.querySelectorAll(".btn-editar-opcion").forEach(btn => {
-      btn.onclick = async function() {
+      btn.onclick = function() {
         const li = btn.closest("li");
         const valorAntiguo = btn.dataset.valor;
         const span = li.querySelector("span:first-child");
+        // Si ya está editando, no hacer nada
         if (li.querySelector("input")) return;
         const input = document.createElement("input");
         input.type = "text";
@@ -436,11 +276,12 @@ document.addEventListener("DOMContentLoaded", () => {
         span.replaceWith(input);
         input.focus();
         input.select();
+
         let editando = true;
-        input.addEventListener("keydown", async (e) => {
+        input.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
             editando = false;
-            await guardarEdicion();
+            guardarEdicion();
           }
           if (e.key === "Escape") {
             editando = false;
@@ -450,25 +291,43 @@ document.addEventListener("DOMContentLoaded", () => {
         input.addEventListener("blur", () => {
           if (editando) cancelarEdicion();
         });
-        async function guardarEdicion() {
+
+        function guardarEdicion() {
           const nuevoValor = input.value.trim();
           if (!nuevoValor || nuevoValor === valorAntiguo) { cancelarEdicion(); return; }
           if (modoOpciones === "empresa") {
-            await fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nombre: nuevoValor })
+            window.storageAPI.leerEmpresas().then(empresas => {
+              const idx = empresas.indexOf(valorAntiguo);
+              if (idx !== -1) {
+                empresas[idx] = nuevoValor;
+                empresas.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+                return window.storageAPI.escribirEmpresas(empresas);
+              }
+            }).then(() => {
+              cargarEmpresas();
+              cargarListaOpciones();
             });
-            cargarEmpresas();
-            cargarListaOpciones();
           } else if (modoOpciones === "tipo") {
-            await fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nombre: nuevoValor })
-            });
-            cargarTiposMovimiento();
-            cargarListaOpciones();
+            const archivo = tipoOpciones === "egreso" ? "tipoegreso" : "tipoingreso";
+            window.storageAPI[`leer${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`]()
+              .then(tipos => {
+                const idx = tipos.indexOf(valorAntiguo);
+                if (idx !== -1) {
+                  tipos[idx] = nuevoValor;
+                  tipos.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+                  return window.storageAPI[`escribir${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`](tipos);
+                }
+              }).then(() => {
+                if (tipoOpciones === "ingreso") {
+                  opcionesIngreso = opcionesIngreso.map(t => t === valorAntiguo ? nuevoValor : t);
+                  opcionesIngreso.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+                } else {
+                  opcionesEgreso = opcionesEgreso.map(t => t === valorAntiguo ? nuevoValor : t);
+                  opcionesEgreso.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+                }
+                if (tipoSelect.value === tipoOpciones) actualizarAwesomplete(tipoOpciones);
+                cargarListaOpciones();
+              });
           }
         }
         function cancelarEdicion() {
@@ -476,20 +335,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
     });
+
     // Eliminar con modal personalizado
     listaOpciones.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
-      btn.onclick = async function() {
+      btn.onclick = function() {
         const valor = btn.dataset.valor;
-        const confirmado = await mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`);
-        if (!confirmado) return;
-        if (modoOpciones === "empresa") {
-          await fetch(`/api/empresas/${encodeURIComponent(valor)}`, { method: 'DELETE' });
-          cargarEmpresas();
-        } else if (modoOpciones === "tipo") {
-          await fetch(`/api/tipos_movimiento/${encodeURIComponent(valor)}`, { method: 'DELETE' });
-          cargarTiposMovimiento();
-        }
-        cargarListaOpciones();
+        mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`).then(confirmado => {
+          if (!confirmado) return;
+          if (modoOpciones === "empresa") {
+            window.storageAPI.leerEmpresas().then(empresas => {
+              const idx = empresas.indexOf(valor);
+              if (idx !== -1) {
+                empresas.splice(idx, 1);
+                return window.storageAPI.escribirEmpresas(empresas);
+              }
+            }).then(() => {
+              cargarEmpresas();
+              cargarListaOpciones();
+            });
+          } else if (modoOpciones === "tipo") {
+            const archivo = tipoOpciones === "egreso" ? "tipoegreso" : "tipoingreso";
+            window.storageAPI[`leer${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`]()
+              .then(tipos => {
+                const idx = tipos.indexOf(valor);
+                if (idx !== -1) {
+                  tipos.splice(idx, 1);
+                  return window.storageAPI[`escribir${archivo.charAt(0).toUpperCase() + archivo.slice(1)}`](tipos);
+                }
+              }).then(() => {
+                if (tipoOpciones === "ingreso") {
+                  opcionesIngreso = opcionesIngreso.filter(t => t !== valor);
+                } else {
+                  opcionesEgreso = opcionesEgreso.filter(t => t !== valor);
+                }
+                if (tipoSelect.value === tipoOpciones) actualizarAwesomplete(tipoOpciones);
+                cargarListaOpciones();
+              });
+          }
+        });
       };
     });
   }
@@ -515,92 +398,4 @@ document.addEventListener("DOMContentLoaded", () => {
       btnNo.addEventListener("click", onNo);
     });
   }
-
-  // Modal para agregar tipo de movimiento en INICIO
-  // ...existing code...
-  if (btnAgregarTipo) {
-    btnAgregarTipo.onclick = function() {
-      modalAgregarTipo.style.display = "flex";
-    };
-  }
-  if (btnCerrarModalAgregarTipo) {
-    btnCerrarModalAgregarTipo.onclick = function() {
-      modalAgregarTipo.style.display = "none";
-    };
-  }
-  const formAgregarTipo = document.getElementById("form-agregar-tipo-movimiento");
-  if (formAgregarTipo) {
-    formAgregarTipo.addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const nombre = document.getElementById("nuevo-tipo-nombre").value.trim();
-      const tipo = document.getElementById("nuevo-tipo-tipo").value;
-      if (!nombre) return alert("Debes ingresar un nombre");
-      await fetch("/api/tipos_movimiento", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({nombre, tipo})
-      });
-      modalAgregarTipo.style.display = "none";
-      // Recarga las opciones de tipo de movimiento si tienes esa función
-      if (typeof cargarTiposMovimiento === "function") await cargarTiposMovimiento();
-      // Muestra notificación si tienes esa función
-      if (typeof mostrarToast === "function") mostrarToast("✅ Tipo de movimiento agregado");
-    });
-  }
-
-  // Mostrar todas las opciones de tipo de movimiento al hacer click o focus
-  if (inputTipoMovimiento && window.Awesomplete) {
-    inputTipoMovimiento.addEventListener("focus", function() {
-      this.value = "";
-      if (window.awesomplete) window.awesomplete.evaluate();
-    });
-    inputTipoMovimiento.addEventListener("click", function() {
-      this.value = "";
-      if (window.awesomplete) window.awesomplete.evaluate();
-    });
-  }
 });
-
-// Corrige el formato de fecha al mostrar en la tabla
-function agregarFilaMovimiento(mov, tbody) {
-  const monto = parseFloat(mov.monto);
-  const fila = document.createElement("tr");
-  fila.id = `movimiento-${mov.id}`;
-  let fechaFormateada = "";
-  if (mov.fecha) {
-    // Si viene en formato ISO, extrae solo la fecha
-    let soloFecha = mov.fecha.split("T")[0];
-    if (soloFecha.includes("-")) {
-      const [año, mes, dia] = soloFecha.split("-");
-      fechaFormateada = `${dia}/${mes}/${año}`;
-    } else {
-      fechaFormateada = mov.fecha;
-    }
-  }
-  fila.innerHTML = `
-    <td>${fechaFormateada}</td>
-    <td>${mov.empresa || ""}</td>
-    <td>${mov.tipo}</td>
-    <td>${mov.tipoMovimiento || ""}</td>
-    <td>${mov.descripcion}</td>
-    <td>${mov.mes || ""}</td>
-    <td>${mov.año || ""}</td>
-    <td>${monto.toFixed(2)}</td>
-    <td>
-      <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstado('${mov.id}')">${mov.estado}</button>
-    </td>
-    <td style="display:flex;gap:6px;align-items:center;">
-      <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
-        </svg>
-      </button>
-      <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
-        </svg>
-      </button>
-    </td>
-  `;
-  tbody.appendChild(fila);
-}
