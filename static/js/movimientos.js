@@ -3,10 +3,11 @@ let opcionesIngreso = [];
 let opcionesEgreso = [];
 
 async function cargarTiposMovimiento() {
-  const res = await fetch('/api/tipos_movimiento');
+  const tipoSeleccionado = document.getElementById("input-tipo")?.value || "ingreso";
+  const res = await fetch(`/api/tipos_movimiento?tipo=${tipoSeleccionado}`);
   const tipos = await res.json();
-  opcionesIngreso = tipos.map(t => t.nombre);
-  opcionesEgreso = tipos.map(t => t.nombre);
+  opcionesIngreso = tipoSeleccionado === "ingreso" ? tipos.map(t => t.nombre) : [];
+  opcionesEgreso = tipoSeleccionado === "egreso" ? tipos.map(t => t.nombre) : [];
 }
 
 let movimientosEliminados = [];

@@ -321,9 +321,13 @@ def api_empresas_post():
 
 @app.route('/api/tipos_movimiento', methods=['GET'])
 def api_tipos_movimiento():
+    tipo = request.args.get('tipo')
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT nombre FROM tipos_movimiento ORDER BY nombre ASC;')
+    if tipo:
+        cur.execute('SELECT nombre FROM tipos_movimiento WHERE tipo=%s ORDER BY nombre ASC;', (tipo,))
+    else:
+        cur.execute('SELECT nombre FROM tipos_movimiento ORDER BY nombre ASC;')
     tipos = [{'nombre': row[0]} for row in cur.fetchall()]
     cur.close()
     conn.close()
@@ -333,9 +337,10 @@ def api_tipos_movimiento():
 def api_tipos_movimiento_post():
     data = request.get_json()
     nombre = data.get('nombre')
+    tipo = data.get('tipo')
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING;', (nombre,))
+    cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING;', (nombre, tipo))
     conn.commit()
     cur.close()
     conn.close()
