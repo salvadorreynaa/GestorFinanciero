@@ -42,10 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cargarTiposMovimiento() {
-    fetch("/api/tipos_movimiento")
+    const tipoSeleccionado = tipoSelect.value || "ingreso";
+    fetch(`/api/tipos_movimiento?tipo=${tipoSeleccionado}`)
       .then(res => res.json())
       .then(data => {
-        // Actualiza Awesomplete
         if (window.Awesomplete) {
           window.awesomplete = new Awesomplete(inputTipoMovimiento, {
             list: data.map(t => t.nombre),
@@ -60,59 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   cargarEmpresas();
   cargarTiposMovimiento();
-
-  // Mostrar el modal para agregar empresa/tipo
-  if (btnAgregarEmpresa) {
-    btnAgregarEmpresa.addEventListener("click", () => {
-      if (!modalOpcionesTitulo || !modalOpciones || !inputNuevaOpcion || !listaOpciones || !btnGuardarOpcion) return;
-      modalOpcionesTitulo.textContent = "Agregar empresa";
-      modalOpciones.style.display = "block";
-      inputNuevaOpcion.value = "";
-      listaOpciones.innerHTML = "";
-      btnGuardarOpcion.onclick = () => {
-        const nombre = inputNuevaOpcion.value.trim();
-        if (nombre) {
-          fetch("/api/empresas", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nombre })
-          }).then(() => {
-            cargarEmpresas();
-            modalOpciones.style.display = "none";
-          });
-        }
-      };
-    });
+  if (tipoSelect) {
+    tipoSelect.addEventListener("change", cargarTiposMovimiento);
   }
 
-  if (btnAgregarTipo) {
-    btnAgregarTipo.addEventListener("click", () => {
-      if (!modalOpcionesTitulo || !modalOpciones || !inputNuevaOpcion || !listaOpciones || !btnGuardarOpcion) return;
-      modalOpcionesTitulo.textContent = "Agregar tipo de movimiento";
-      modalOpciones.style.display = "block";
-      inputNuevaOpcion.value = "";
-      listaOpciones.innerHTML = "";
-      btnGuardarOpcion.onclick = () => {
-        const nombre = inputNuevaOpcion.value.trim();
-        if (nombre) {
-          fetch("/api/tipos_movimiento", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nombre })
-          }).then(() => {
-            cargarTiposMovimiento();
-            modalOpciones.style.display = "none";
-          });
-        }
-      };
-    });
-  }
-
-  if (btnCerrarOpciones && modalOpciones) {
-    btnCerrarOpciones.addEventListener("click", () => {
-      modalOpciones.style.display = "none";
-    });
-  }
 
   // Múltiples movimientos automáticos (lógica original)
   activarMultiples.addEventListener("change", () => {
