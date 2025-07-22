@@ -1,3 +1,185 @@
+  // Modal de opciones (empresas y tipos de movimiento)
+  const modalOpciones = document.getElementById("modal-opciones");
+  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
+  const modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
+  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
+  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
+  const listaOpciones = document.getElementById("lista-opciones");
+
+  let modoOpciones = "empresa"; // "empresa" o "tipo"
+  let tipoOpciones = "ingreso"; // "ingreso" o "egreso"
+
+  btnAgregarEmpresa.addEventListener("click", () => {
+    modoOpciones = "empresa";
+    modalOpcionesTitulo.textContent = "Empresas";
+    inputNuevaOpcion.placeholder = "Nueva empresa...";
+    inputNuevaOpcion.value = "";
+    cargarListaOpciones();
+    modalOpciones.style.display = "flex";
+    inputNuevaOpcion.focus();
+  });
+  btnAgregarTipo.addEventListener("click", () => {
+    modoOpciones = "tipo";
+    tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
+    modalOpcionesTitulo.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
+    inputNuevaOpcion.placeholder = "Nuevo tipo...";
+    inputNuevaOpcion.value = "";
+    cargarListaOpciones();
+    modalOpciones.style.display = "flex";
+    inputNuevaOpcion.focus();
+  });
+  btnCerrarOpciones.addEventListener("click", () => {
+    modalOpciones.style.display = "none";
+  });
+  modalOpciones.addEventListener("click", (e) => {
+    if (e.target === modalOpciones) modalOpciones.style.display = "none";
+  });
+  btnGuardarOpcion.addEventListener("click", guardarOpcion);
+  inputNuevaOpcion.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") guardarOpcion();
+  });
+
+  async function cargarListaOpciones() {
+    listaOpciones.innerHTML = "";
+    if (modoOpciones === "empresa") {
+      const res = await fetch("/api/empresas");
+      const empresas = await res.json();
+      empresas.forEach(e => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.alignItems = "center";
+        li.style.justifyContent = "space-between";
+        li.style.padding = "4px 0";
+        li.innerHTML = `
+          <span>${e.nombre}</span>
+          <span>
+            <button class="btn-editar-opcion" title="Editar" data-valor="${e.nombre}">&#9998;</button>
+            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${e.nombre}">&#128465;</button>
+          </span>
+        `;
+        listaOpciones.appendChild(li);
+      });
+      agregarEventosOpciones();
+    } else if (modoOpciones === "tipo") {
+      const res = await fetch(`/api/tipos_movimiento?tipo=${tipoOpciones}`);
+      const tipos = await res.json();
+      tipos.forEach(t => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.alignItems = "center";
+        li.style.justifyContent = "space-between";
+        li.style.padding = "4px 0";
+        li.innerHTML = `
+          <span>${t.nombre}</span>
+          <span>
+            <button class="btn-editar-opcion" title="Editar" data-valor="${t.nombre}">&#9998;</button>
+            <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${t.nombre}">&#128465;</button>
+          </span>
+        `;
+        listaOpciones.appendChild(li);
+      });
+      agregarEventosOpciones();
+    }
+  }
+
+  function agregarEventosOpciones() {
+    listaOpciones.querySelectorAll(".btn-editar-opcion").forEach(btn => {
+      btn.onclick = async function() {
+        const li = btn.closest("li");
+        const valorAntiguo = btn.dataset.valor;
+        const span = li.querySelector("span:first-child");
+        if (li.querySelector("input")) return;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = valorAntiguo;
+        input.style.flex = "1";
+        input.style.marginRight = "8px";
+        span.replaceWith(input);
+        input.focus();
+        input.select();
+        let editando = true;
+        input.addEventListener("keydown", async (e) => {
+          if (e.key === "Enter") {
+            editando = false;
+            await guardarEdicion();
+          }
+          if (e.key === "Escape") {
+            editando = false;
+            cancelarEdicion();
+          }
+        });
+        input.addEventListener("blur", () => {
+          if (editando) cancelarEdicion();
+        });
+        async function guardarEdicion() {
+          const nuevoValor = input.value.trim();
+          if (!nuevoValor || nuevoValor === valorAntiguo) { cancelarEdicion(); return; }
+          if (modoOpciones === "empresa") {
+            await fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ nombre: nuevoValor })
+            });
+            cargarListaOpciones();
+            cargarEmpresas();
+          } else if (modoOpciones === "tipo") {
+            await fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ nombre: nuevoValor })
+            });
+            cargarListaOpciones();
+            cargarTiposMovimiento();
+          }
+        }
+        function cancelarEdicion() {
+          cargarListaOpciones();
+        }
+      };
+    });
+    listaOpciones.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
+      btn.onclick = async function() {
+        const valor = btn.dataset.valor;
+        const confirmado = confirm(`¿Seguro que deseas eliminar "${valor}"?`);
+        if (!confirmado) return;
+        if (modoOpciones === "empresa") {
+          await fetch(`/api/empresas/${encodeURIComponent(valor)}`, { method: 'DELETE' });
+          cargarListaOpciones();
+          cargarEmpresas();
+        } else if (modoOpciones === "tipo") {
+          await fetch(`/api/tipos_movimiento/${encodeURIComponent(valor)}`, { method: 'DELETE' });
+          cargarListaOpciones();
+          cargarTiposMovimiento();
+        }
+      };
+    });
+  }
+
+  async function guardarOpcion() {
+    const valor = inputNuevaOpcion.value.trim();
+    if (!valor) return;
+    if (modoOpciones === "empresa") {
+      await fetch("/api/empresas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: valor })
+      });
+      cargarListaOpciones();
+      cargarEmpresas();
+      inputNuevaOpcion.value = "";
+      mostrarToast("✅ Empresa agregada");
+    } else if (modoOpciones === "tipo") {
+      await fetch("/api/tipos_movimiento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: valor, tipo: tipoOpciones })
+      });
+      cargarListaOpciones();
+      cargarTiposMovimiento();
+      inputNuevaOpcion.value = "";
+      mostrarToast("✅ Tipo de movimiento agregado");
+    }
+  }
   // Modal para agregar empresa
   const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
   const modalAgregarEmpresa = document.getElementById("modal-agregar-empresa");
