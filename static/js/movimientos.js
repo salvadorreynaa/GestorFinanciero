@@ -81,18 +81,16 @@ async function cargarMovimientos() {
   // Para expandir/collapse: guardar estado en memoria
   if (!window.estadoExpandidoMes) window.estadoExpandidoMes = {};
 
-  // Ordenar claves de mes/año por fecha descendente
-  const clavesOrdenadas = Object.keys(grupos).sort((a, b) => {
-    const [mesA, añoA] = a.split("-");
-    const [mesB, añoB] = b.split("-");
-    // Convertir mes a número
-    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-    const numA = parseInt(añoA) * 100 + (meses.indexOf(mesA) + 1);
-    const numB = parseInt(añoB) * 100 + (meses.indexOf(mesB) + 1);
-    return numB - numA;
-  });
-
-  let hayMovimientos = false;
+    // Ordenar claves de mes/año por fecha descendente
+    const clavesOrdenadas = Object.keys(grupos).sort((a, b) => {
+      const [mesA, añoA] = a.split("-").map(s => s ? s.trim() : '');
+      const [mesB, añoB] = b.split("-").map(s => s ? s.trim() : '');
+      // Convertir mes a número
+      const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      const numA = (parseInt(añoA) || 0) * 100 + (meses.indexOf(mesA) + 1);
+      const numB = (parseInt(añoB) || 0) * 100 + (meses.indexOf(mesB) + 1);
+      return numB - numA;
+    });  let hayMovimientos = false;
   clavesOrdenadas.forEach(clave => {
     const movimientosMes = grupos[clave];
     if (movimientosMes.length > 0) hayMovimientos = true;
@@ -103,11 +101,14 @@ async function cargarMovimientos() {
       // Fila resumen personalizada
       const filaResumen = document.createElement("tr");
       filaResumen.className = "fila-resumen-mes" + (window.estadoExpandidoMes[clave] ? " abierta" : "");
-      const [mes, año] = clave.split("-");
+      const [mes, año] = clave.split("-").map(s => s ? s.trim() : '');
+      let textoResumen = mes;
+      if (año) textoResumen += ` - ${año}`;
+      
       filaResumen.innerHTML = `
         <td colspan="10" style="text-align:center;">
           <span class="resumen-mes-texto">
-            ${mes} - ${año || ''}
+            ${textoResumen}
           </span>
         </td>
       `;

@@ -135,7 +135,10 @@ def api_movimientos():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute('''
-            SELECT m.id, m.fecha, m.mes, m.año, m.estado, e.nombre as empresa, m.tipo, m.tipoMovimiento, m.descripcion, m.monto
+            SELECT m.id, m.fecha, 
+            COALESCE(m.mes, to_char(m.fecha, 'TMMonth')) as mes,
+            COALESCE(m.año, to_char(m.fecha, 'YYYY')) as año,
+            m.estado, e.nombre as empresa, m.tipo, m.tipoMovimiento, m.descripcion, m.monto
             FROM movimientos m
             LEFT JOIN empresas e ON m.empresa_id = e.id
             ORDER BY m.fecha DESC;
