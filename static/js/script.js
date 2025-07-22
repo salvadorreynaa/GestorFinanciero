@@ -1,3 +1,5 @@
+  // Botones para abrir el modal de opciones
+  // ...existing code...
   // Modal de opciones (empresas y tipos de movimiento)
   const modalOpciones = document.getElementById("modal-opciones");
   const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
@@ -9,25 +11,29 @@
   let modoOpciones = "empresa"; // "empresa" o "tipo"
   let tipoOpciones = "ingreso"; // "ingreso" o "egreso"
 
-  btnAgregarEmpresa.addEventListener("click", () => {
-    modoOpciones = "empresa";
-    modalOpcionesTitulo.textContent = "Empresas";
-    inputNuevaOpcion.placeholder = "Nueva empresa...";
-    inputNuevaOpcion.value = "";
-    cargarListaOpciones();
-    modalOpciones.style.display = "flex";
-    inputNuevaOpcion.focus();
-  });
-  btnAgregarTipo.addEventListener("click", () => {
-    modoOpciones = "tipo";
-    tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
-    modalOpcionesTitulo.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
-    inputNuevaOpcion.placeholder = "Nuevo tipo...";
-    inputNuevaOpcion.value = "";
-    cargarListaOpciones();
-    modalOpciones.style.display = "flex";
-    inputNuevaOpcion.focus();
-  });
+  if (btnAgregarEmpresa) {
+    btnAgregarEmpresa.addEventListener("click", () => {
+      modoOpciones = "empresa";
+      modalOpcionesTitulo.textContent = "Empresas";
+      inputNuevaOpcion.placeholder = "Nueva empresa...";
+      inputNuevaOpcion.value = "";
+      cargarListaOpciones();
+      modalOpciones.style.display = "flex";
+      inputNuevaOpcion.focus();
+    });
+  }
+  if (btnAgregarTipo) {
+    btnAgregarTipo.addEventListener("click", () => {
+      modoOpciones = "tipo";
+      tipoOpciones = tipoSelect.value === "egreso" ? "egreso" : "ingreso";
+      modalOpcionesTitulo.textContent = tipoOpciones === "egreso" ? "Tipos de Egreso" : "Tipos de Ingreso";
+      inputNuevaOpcion.placeholder = "Nuevo tipo...";
+      inputNuevaOpcion.value = "";
+      cargarListaOpciones();
+      modalOpciones.style.display = "flex";
+      inputNuevaOpcion.focus();
+    });
+  }
   btnCerrarOpciones.addEventListener("click", () => {
     modalOpciones.style.display = "none";
   });
