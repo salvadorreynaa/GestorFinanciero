@@ -1,3 +1,33 @@
+  // Modal para agregar empresa
+  const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
+  const modalAgregarEmpresa = document.getElementById("modal-agregar-empresa");
+  const btnCerrarModalAgregarEmpresa = document.getElementById("btn-cerrar-modal-agregar-empresa");
+  if (btnAgregarEmpresa && modalAgregarEmpresa) {
+    btnAgregarEmpresa.addEventListener("click", () => {
+      modalAgregarEmpresa.style.display = "flex";
+    });
+  }
+  if (btnCerrarModalAgregarEmpresa && modalAgregarEmpresa) {
+    btnCerrarModalAgregarEmpresa.addEventListener("click", () => {
+      modalAgregarEmpresa.style.display = "none";
+    });
+  }
+  const formAgregarEmpresa = document.getElementById("form-agregar-empresa");
+  if (formAgregarEmpresa) {
+    formAgregarEmpresa.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById("nueva-empresa-nombre").value.trim();
+      if (!nombre) return alert("Debes ingresar un nombre");
+      await fetch("/api/empresas", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({nombre})
+      });
+      modalAgregarEmpresa.style.display = "none";
+      if (typeof cargarEmpresas === "function") await cargarEmpresas();
+      if (typeof mostrarToast === "function") mostrarToast("✅ Empresa agregada");
+    });
+  }
 let guardando = false;
 
 document.addEventListener("DOMContentLoaded", () => {
