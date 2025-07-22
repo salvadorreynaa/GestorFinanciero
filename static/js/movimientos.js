@@ -360,7 +360,6 @@ if (filtroTipoMovimiento) filtroTipoMovimiento.addEventListener("change", cargar
 
 window.cambiarEstado = cambiarEstado;
 window.eliminarMovimiento = eliminarMovimiento;
-window.deshacerEliminacion = deshacerEliminacion;
 window.editarMovimiento = editarMovimiento;
 
 cargarTiposMovimiento();
