@@ -140,21 +140,27 @@ function agregarFilaMovimiento(mov, tbody) {
   const monto = parseFloat(mov.monto);
   const fila = document.createElement("tr");
   fila.id = `movimiento-${mov.id}`;
-  const fechaFormateada = mov.fecha
-    ? (() => {
-        const [a, m, d] = mov.fecha.split('-');
-        const yy = a.slice(-2);
-        return `${d}-${m}-${yy}`;
-      })()
-    : "";
+  let fechaFormateada = "";
+  if (mov.fecha) {
+    let soloFecha = mov.fecha.split("T")[0];
+    if (soloFecha.includes("-")) {
+      const [año, mes, dia] = soloFecha.split("-");
+      fechaFormateada = `${dia}/${mes}/${año}`;
+    } else {
+      fechaFormateada = mov.fecha;
+    }
+  }
+  // Asegura que mes y año nunca sean undefined
+  const mes = mov.mes || "";
+  const año = mov.año || "";
   fila.innerHTML = `
     <td>${fechaFormateada}</td>
     <td>${mov.empresa || ""}</td>
     <td>${mov.tipo}</td>
     <td>${mov.tipoMovimiento || ""}</td>
     <td>${mov.descripcion}</td>
-    <td>${mov.mes}</td>
-    <td>${mov.año}</td>
+    <td>${mes}</td>
+    <td>${año}</td>
     <td>${monto.toFixed(2)}</td>
     <td>
       <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstado('${mov.id}')">${mov.estado}</button>

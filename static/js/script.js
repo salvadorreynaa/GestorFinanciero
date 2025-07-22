@@ -169,9 +169,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const tipo = tipoSelect.value;
       const tipoMovimiento = inputTipoMovimiento.value.trim();
       const descripcion = document.getElementById("descripcion").value.trim();
-      const fecha = inputFecha.value.trim();
-      const mes = fecha ? fecha.split("-")[1] : "";
-      const año = fecha ? fecha.split("-")[0] : "";
+      const fecha = inputFecha.value.trim(); // formato: YYYY-MM-DD
+      let año = "";
+      let mes = "";
+      if (fecha && fecha.includes("-")) {
+        const partes = fecha.split("-");
+        año = partes[0];
+        mes = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][parseInt(partes[1],10)-1];
+      }
       const monto = parseFloat(document.getElementById("monto").value);
       const empresa = selectEmpresa.value;
       if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto) || !empresa) {
@@ -439,3 +444,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// Corrige el formato de fecha al mostrar en la tabla
+function agregarFilaMovimiento(mov, tbody) {
+  const monto = parseFloat(mov.monto);
+  const fila = document.createElement("tr");
+  fila.id = `movimiento-${mov.id}`;
+  let fechaFormateada = "";
+  if (mov.fecha) {
+    // Si viene en formato ISO, extrae solo la fecha
+    let soloFecha = mov.fecha.split("T")[0];
+    if (soloFecha.includes("-")) {
+      const [año, mes, dia] = soloFecha.split("-");
+      fechaFormateada = `${dia}/${mes}/${año}`;
+    } else {
+      fechaFormateada = mov.fecha;
+    }
+  }
+  fila.innerHTML = `
+    <td>${fechaFormateada}</td>
+    <td>${mov.empresa || ""}</td>
+    <td>${mov.tipo}</td>
+    <td>${mov.tipoMovimiento || ""}</td>
+    <td>${mov.descripcion}</td>
+    <td>${mov.mes || ""}</td>
+    <td>${mov.año || ""}</td>
+    <td>${monto.toFixed(2)}</td>
+    <td>
+      <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstado('${mov.id}')">${mov.estado}</button>
+    </td>
+    <td style="display:flex;gap:6px;align-items:center;">
+      <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
+        </svg>
+      </button>
+      <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
+        </svg>
+      </button>
+    </td>
+  `;
+  tbody.appendChild(fila);
+}

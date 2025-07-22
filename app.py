@@ -84,8 +84,25 @@ def api_estadisticas():
         ingresos = egresos = cobrado = porCobrar = porPagar = 0
         for tipo_id, tipo_nombre, monto, fecha in rows:
             # Filtrar por mes y año si se pasan como parámetros
-            if mes and año and fecha:
-                if fecha.strftime('%B') != mes or str(fecha.year) != año:
+            tipo_nombre = (tipo_nombre or '').strip().lower()
+            mes_db = ''
+            año_db = ''
+            if fecha:
+                # Si es datetime, extrae mes y año
+                try:
+                    mes_db = fecha.strftime('%B')
+                    año_db = str(fecha.year)
+                except Exception:
+                    # Si es string tipo 'YYYY-MM-DD'
+                    fecha_str = str(fecha)
+                    partes = fecha_str.split('-')
+                    if len(partes) == 3:
+                        año_db = partes[0]
+                        mes_num = int(partes[1])
+                        meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+                        mes_db = meses[mes_num-1]
+            if mes and año:
+                if mes_db != mes or año_db != año:
                     continue
             if tipo_nombre == 'ingreso':
                 ingresos += float(monto) if monto is not None else 0.0
