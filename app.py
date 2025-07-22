@@ -405,7 +405,7 @@ def api_movimientos_patch(id):
         conn.close()
         campos.append('empresa_id=%s')
         valores.append(empresa_id)
-    for campo in ['tipo', 'tipoMovimiento', 'descripcion', 'fecha', 'mes', 'año', 'monto']:
+    for campo in ['tipo', 'tipoMovimiento', 'descripcion', 'fecha', 'mes', 'año', 'monto', 'mensual_auto']:
         if campo in data:
             campos.append(f"{campo}=%s")
             valores.append(data[campo])

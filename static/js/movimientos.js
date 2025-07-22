@@ -291,6 +291,7 @@ function mostrarToast(mensaje) {
 function asignarCerrarModalEditar() {
   const modalEditar = document.getElementById("modal-editar");
   if (modalEditar) {
+    // Busca el botón por clase o id
     const btnCerrar = modalEditar.querySelector(".btn-cerrar") || document.getElementById("btn-cerrar-modal-editar");
     if (btnCerrar) {
       btnCerrar.onclick = () => {
@@ -330,6 +331,11 @@ async function editarMovimiento(id) {
   document.getElementById("input-empresa").value = mov.empresa || "";
   document.getElementById("input-index").value = mov.id;
   actualizarAwesompleteModal(mov.tipo);
+  // Cargar estado del checkbox de movimientos automáticos
+  const chkAuto = document.getElementById("input-mensual-auto");
+  if (chkAuto) {
+    chkAuto.checked = mov.mensual_auto === true || mov.mensual_auto === "true";
+  }
   document.getElementById("modal-editar").style.display = "flex";
 }
 
@@ -365,6 +371,7 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
   }
   const monto = parseFloat(document.getElementById("input-monto").value);
   const empresa = document.getElementById("input-empresa").value.trim();
+  const mensual_auto = document.getElementById("input-mensual-auto")?.checked || false;
   if (!fecha) {
     alert("Debes ingresar una fecha válida");
     return;
@@ -381,7 +388,8 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
     mes,
     año,
     monto,
-    empresa
+    empresa,
+    mensual_auto
   };
   await fetch(`/api/movimientos/${id}`, {
     method: "PATCH",
