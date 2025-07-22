@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const explicacionMultiples = document.getElementById("explicacion-multiples");
   const inputFecha = document.getElementById("fecha");
   const modalOpciones = document.getElementById("modal-opciones");
+  if (modalOpciones) modalOpciones.style.zIndex = '1000';  // Aseguramos que tenga un z-index menor
   const tituloOpciones = document.getElementById("modal-opciones-titulo");
   const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
   const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
@@ -191,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = 'flex';
         modal.style.alignItems = 'center';
         modal.style.justifyContent = 'center';
-        modal.style.zIndex = '99999';
+        modal.style.zIndex = '999999';  // Aseguramos que siempre esté por encima
         modal.innerHTML = `
           <div style="background:#fff;padding:24px 32px;border-radius:8px;box-shadow:0 2px 16px #0002;text-align:center;min-width:260px;max-width:90vw;z-index:99999;">
             <div id="mensaje-confirmar-eliminar" style="margin-bottom:18px;font-size:1.1em;"></div>

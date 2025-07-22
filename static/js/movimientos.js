@@ -72,7 +72,7 @@ async function cargarMovimientos() {
       coincideDescripcion &&
       coincideTipoBusqueda
     ) {
-      const clave = `${mov.mes}-${mov.año}`;
+      const clave = mov.mes && mov.año ? `${mov.mes}-${mov.año}` : mov.mes;
       if (!grupos[clave]) grupos[clave] = [];
       grupos[clave].push(mov);
     }
@@ -103,10 +103,11 @@ async function cargarMovimientos() {
       // Fila resumen personalizada
       const filaResumen = document.createElement("tr");
       filaResumen.className = "fila-resumen-mes" + (window.estadoExpandidoMes[clave] ? " abierta" : "");
+      const [mes, año] = clave.split("-");
       filaResumen.innerHTML = `
         <td colspan="10" style="text-align:center;">
           <span class="resumen-mes-texto">
-            ${clave.split("-")[0]} - ${clave.split("-")[1]}
+            ${mes} - ${año || ''}
           </span>
         </td>
       `;
