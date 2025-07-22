@@ -390,7 +390,22 @@ def api_movimientos_patch(id):
     data = request.get_json()
     campos = []
     valores = []
-    for campo in ['tipo', 'tipoMovimiento', 'descripcion', 'fecha', 'mes', 'año', 'monto', 'empresa']:
+    # Si se envía empresa, buscar el id
+    empresa_id = None
+    if 'empresa' in data:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (data['empresa'],))
+        empresa_id = cur.fetchone()
+        if not empresa_id:
+            cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (data['empresa'],))
+            empresa_id = cur.fetchone()
+        empresa_id = empresa_id[0] if empresa_id else None
+        cur.close()
+        conn.close()
+        campos.append('empresa_id=%s')
+        valores.append(empresa_id)
+    for campo in ['tipo', 'tipoMovimiento', 'descripcion', 'fecha', 'mes', 'año', 'monto']:
         if campo in data:
             campos.append(f"{campo}=%s")
             valores.append(data[campo])

@@ -365,23 +365,28 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
   }
   const monto = parseFloat(document.getElementById("input-monto").value);
   const empresa = document.getElementById("input-empresa").value.trim();
+  if (!fecha) {
+    alert("Debes ingresar una fecha válida");
+    return;
+  }
   if (isNaN(monto) || monto < 0) {
     alert("Monto inválido");
     return;
   }
+  const body = {
+    tipo,
+    tipoMovimiento,
+    descripcion,
+    fecha,
+    mes,
+    año,
+    monto,
+    empresa
+  };
   await fetch(`/api/movimientos/${id}`, {
     method: "PATCH",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      tipo,
-      tipoMovimiento,
-      descripcion,
-      fecha,
-      mes,
-      año,
-      monto,
-      empresa
-    })
+    body: JSON.stringify(body)
   });
   document.getElementById("modal-editar").style.display = "none";
   await cargarMovimientos();
