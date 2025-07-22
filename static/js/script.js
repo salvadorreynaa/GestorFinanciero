@@ -3,79 +3,7 @@ let guardando = false;
 document.addEventListener("DOMContentLoaded", () => {
   // Referencias a elementos del DOM (todas al inicio)
   const formulario = document.getElementById("formulario");
-  const tipoSelect = document.getElementById("tipo");
-  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  const selectEmpresa = document.getElementById("empresa");
-  const activarMultiples = document.getElementById("activar-multiples");
-  const opcionesMultiples = document.getElementById("opciones-multiples");
-  const recordatorioInicio = document.getElementById("recordatorio-inicio");
-  const mesFinMultiple = document.getElementById("mes-fin-multiple");
-  const explicacionMultiples = document.getElementById("explicacion-multiples");
-  const inputFecha = document.getElementById("fecha");
-  const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
-  const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
-  const modalOpciones = document.getElementById("modal-opciones");
-  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
-  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  const listaOpciones = document.getElementById("lista-opciones");
-
-  // Definir modalOpcionesTitulo solo si existe
-  let modalOpcionesTitulo = null;
-  if (document.getElementById("modal-opciones-titulo")) {
-    modalOpcionesTitulo = document.getElementById("modal-opciones-titulo");
-  }
-
-  // Cargar empresas y tipos de movimiento desde el backend
-  function cargarEmpresas() {
-    fetch("/api/empresas")
-      .then(res => res.json())
-      .then(data => {
-        selectEmpresa.innerHTML = '<option value="">Selecciona...</option>';
-        data.forEach(e => {
-          const opt = document.createElement("option");
-          opt.value = e.nombre;
-          opt.textContent = e.nombre;
-          selectEmpresa.appendChild(opt);
-        });
-      });
-  }
-
-  function cargarTiposMovimiento() {
-    const tipoSeleccionado = tipoSelect.value || "ingreso";
-    fetch(`/api/tipos_movimiento?tipo=${tipoSeleccionado}`)
-      .then(res => res.json())
-      .then(data => {
-        if (window.Awesomplete) {
-          window.awesomplete = new Awesomplete(inputTipoMovimiento, {
-            list: data.map(t => t.nombre),
-            minChars: 0,
-            autoFirst: true,
-            maxItems: 999,
-            sort: (a, b) => a.value.localeCompare(b.value, 'es', { sensitivity: 'base' })
-          });
-        }
-      });
-  }
-
-  cargarEmpresas();
-  cargarTiposMovimiento();
-  if (tipoSelect) {
-    tipoSelect.addEventListener("change", cargarTiposMovimiento);
-  }
-
-
-  // Múltiples movimientos automáticos (lógica original)
-  activarMultiples.addEventListener("change", () => {
-    opcionesMultiples.style.display = activarMultiples.checked ? "flex" : "none";
-  });
-
-  // --- MÚLTIPLES MOVIMIENTOS AUTOMÁTICOS ---
-  if (activarMultiples && opcionesMultiples && recordatorioInicio && mesFinMultiple && explicacionMultiples && inputFecha) {
-    activarMultiples.addEventListener("change", () => {
-      if (activarMultiples.checked) {
-        opcionesMultiples.style.display = "block";
-        actualizarRecordatorioYExplicacion();
+  // ...existing code...
       } else {
         opcionesMultiples.style.display = "none";
         explicacionMultiples.textContent = "";
@@ -140,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            tipo,
+  // ...existing code...
             tipoMovimiento,
             descripcion,
             fecha,
