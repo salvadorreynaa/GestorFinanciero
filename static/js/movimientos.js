@@ -264,6 +264,14 @@ async function eliminarMovimiento(id) {
   await cargarMovimientos();
 }
 
+// Evento para cerrar el modal de edición
+const btnCerrarModalEditar = document.getElementById("btn-cerrar-modal-editar");
+if (btnCerrarModalEditar) {
+  btnCerrarModalEditar.addEventListener("click", () => {
+    document.getElementById("modal-editar").style.display = "none";
+  });
+}
+
 async function editarMovimiento(id) {
   const res = await fetch(`/api/movimientos`);
   const movimientos = await res.json();
@@ -283,7 +291,10 @@ async function editarMovimiento(id) {
   selectTipo.value = mov.tipo;
   document.getElementById("input-tipoMovimiento").value = mov.tipoMovimiento;
   document.getElementById("input-descripcion").value = mov.descripcion;
-  document.getElementById("input-fecha").value = mov.fecha;
+  // Solo asigna la fecha si existe, no obliga a reingresarla
+  if (mov.fecha) {
+    document.getElementById("input-fecha").value = mov.fecha;
+  }
   document.getElementById("input-mes").value = mov.mes;
   document.getElementById("input-monto").value = mov.monto;
   document.getElementById("input-empresa").value = mov.empresa || "";
