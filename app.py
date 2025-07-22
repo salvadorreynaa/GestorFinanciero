@@ -139,25 +139,44 @@ def api_movimientos():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute('''
-            SELECT m.id, m.fecha, e.nombre as empresa, t.nombre as tipo, m.descripcion, m.monto, t.nombre as tiposmovimientos
+            SELECT m.id, m.fecha, m.mes, m.año, m.estado, e.nombre as empresa, m.tipo, m.tipoMovimiento, m.descripcion, m.monto
             FROM movimientos m
             LEFT JOIN empresas e ON m.empresa_id = e.id
-            LEFT JOIN tipos_movimiento t ON m.tipo_id = t.id
             ORDER BY m.fecha DESC;
         ''')
         movimientos = []
         for row in cur.fetchall():
-            # Manejo de nulos y tipos
-            id, fecha, empresa, tipo, descripcion, monto, tiposmovimientos = row
+            id, fecha, mes, año, estado, empresa, tipo, tipoMovimiento, descripcion, monto = row
             movimientos.append({
                 'id': id,
-                'fecha': fecha.isoformat() if fecha else '',
+                'fecha': fecha.isoformat() if hasattr(fecha, 'isoformat') else (fecha or ''),
+                'mes': mes or '',
+                'año': año or '',
+                'estado': estado or 'Pendiente',
                 'empresa': empresa or '',
                 'tipo': tipo or '',
+                'tipoMovimiento': tipoMovimiento or '',
                 'descripcion': descripcion or '',
-                'monto': float(monto) if monto is not None else 0.0,
-                'tiposmovimientos': tiposmovimientos or ''
+                'monto': float(monto) if monto is not None else 0.0
             })
+# Endpoint para cambiar el estado de un movimiento
+@app.route('/api/movimientos/<int:id>/estado', methods=['PATCH'])
+def api_movimiento_estado(id):
+    data = request.get_json()
+    nuevo_estado = data.get('estado')
+    if not nuevo_estado:
+        return jsonify({'status': 'error', 'error': 'Falta estado'}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('UPDATE movimientos SET estado=%s WHERE id=%s;', (nuevo_estado, id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        print('Error al cambiar estado:', e)
+        return jsonify({'status': 'error', 'error': str(e)}), 500
         cur.close()
         conn.close()
         return jsonify(movimientos)

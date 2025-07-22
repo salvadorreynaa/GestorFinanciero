@@ -141,18 +141,22 @@ function agregarFilaMovimiento(mov, tbody) {
   const fila = document.createElement("tr");
   fila.id = `movimiento-${mov.id}`;
   let fechaFormateada = "";
+  let mes = mov.mes || "";
+  let año = mov.año || "";
   if (mov.fecha) {
     let soloFecha = mov.fecha.split("T")[0];
     if (soloFecha.includes("-")) {
-      const [año, mes, dia] = soloFecha.split("-");
-      fechaFormateada = `${dia}/${mes}/${año}`;
+      const [añoF, mesF, diaF] = soloFecha.split("-");
+      fechaFormateada = `${diaF}/${mesF}/${añoF}`;
+      if (!mes) {
+        const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+        mes = mesesNombres[parseInt(mesF,10)-1];
+      }
+      if (!año) año = añoF;
     } else {
       fechaFormateada = mov.fecha;
     }
   }
-  // Asegura que mes y año nunca sean undefined
-  const mes = mov.mes || "";
-  const año = mov.año || "";
   fila.innerHTML = `
     <td>${fechaFormateada}</td>
     <td>${mov.empresa || ""}</td>
@@ -163,7 +167,7 @@ function agregarFilaMovimiento(mov, tbody) {
     <td>${año}</td>
     <td>${monto.toFixed(2)}</td>
     <td>
-      <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstado('${mov.id}')">${mov.estado}</button>
+      <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstadoMovimiento('${mov.id}', this)">${mov.estado}</button>
     </td>
     <td style="display:flex;gap:6px;align-items:center;">
       <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
@@ -179,6 +183,33 @@ function agregarFilaMovimiento(mov, tbody) {
     </td>
   `;
   tbody.appendChild(fila);
+
+}
+
+// Cambiar estado de movimiento
+async function cambiarEstadoMovimiento(id, btn) {
+  // Alterna estado según tipo: egreso (Pendiente→Pagado), ingreso (Pendiente→Cobrado)
+  // Busca el tipo del movimiento
+  const res = await fetch('/api/movimientos');
+  const movimientos = await res.json();
+  const mov = movimientos.find(m => m.id == id);
+  if (!mov) return;
+  let actual = btn.textContent.trim();
+  let nuevoEstado = "Pendiente";
+  if (mov.tipo.toLowerCase() === "egreso") {
+    nuevoEstado = actual === "Pendiente" ? "Pagado" : "Pendiente";
+  } else {
+    nuevoEstado = actual === "Pendiente" ? "Cobrado" : "Pendiente";
+  }
+  btn.textContent = nuevoEstado;
+  btn.classList.toggle("verde", nuevoEstado === "Pagado" || nuevoEstado === "Cobrado");
+  // Actualiza en backend
+  await fetch(`/api/movimientos/${id}/estado`, {
+    method: "PATCH",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({estado: nuevoEstado})
+  });
+  await cargarMovimientos();
 }
 
 async function cargarOpcionesFiltroTipoMovimiento() {
