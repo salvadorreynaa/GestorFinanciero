@@ -3,6 +3,15 @@ let guardando = false;
 document.addEventListener("DOMContentLoaded", () => {
   // Referencias a elementos del DOM (todas al inicio)
   const formulario = document.getElementById("formulario");
+  const tipoSelect = document.getElementById("tipo");
+  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  const selectEmpresa = document.getElementById("empresa");
+  const activarMultiples = document.getElementById("activar-multiples");
+  const opcionesMultiples = document.getElementById("opciones-multiples");
+  const recordatorioInicio = document.getElementById("recordatorio-inicio");
+  const mesFinMultiple = document.getElementById("mes-fin-multiple");
+  const explicacionMultiples = document.getElementById("explicacion-multiples");
+  const inputFecha = document.getElementById("fecha");
   // ...existing code...
   if (activarMultiples && opcionesMultiples && recordatorioInicio && mesFinMultiple && explicacionMultiples && inputFecha) {
     activarMultiples.addEventListener("change", () => {
