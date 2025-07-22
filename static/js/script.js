@@ -157,7 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   tipoSelect.addEventListener('change', actualizarOpcionesTipoMovimiento);
-  actualizarOpcionesTipoMovimiento();
+  // Llamar solo después de inicializar todas las variables DOM
+  setTimeout(actualizarOpcionesTipoMovimiento, 0);
 
   // ...resto del código (listeners, funciones, etc)...
     if (!valor) return;
