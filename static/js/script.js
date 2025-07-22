@@ -11,6 +11,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const mesFinMultiple = document.getElementById("mes-fin-multiple");
   const explicacionMultiples = document.getElementById("explicacion-multiples");
   const inputFecha = document.getElementById("fecha");
+  // --- Datalist para tipo de movimiento ---
+  let datalist = document.getElementById('datalist-tipo-movimiento');
+  if (!datalist) {
+    datalist = document.createElement('datalist');
+    datalist.id = 'datalist-tipo-movimiento';
+    document.body.appendChild(datalist);
+  }
+  inputTipoMovimiento.setAttribute('list', 'datalist-tipo-movimiento');
 
   // --- Modal de opciones ---
   const modalOpciones = document.getElementById("modal-opciones");
@@ -22,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let modoOpciones = "";
   let tipoOpciones = "";
+  let guardando = false;
 
   // --- Listeners para abrir el modal de opciones ---
   document.getElementById("btn-agregar-empresa").addEventListener("click", () => {
@@ -68,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ nombre: valor, tipo: tipoOpciones })
       }).then(() => {
         cargarListaOpciones();
+        actualizarOpcionesTipoMovimiento();
         inputNuevaOpcion.value = "";
       });
     }
