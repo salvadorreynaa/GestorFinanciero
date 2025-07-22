@@ -288,19 +288,14 @@ function mostrarToast(mensaje) {
 }
 
 // Botón de cerrar modal edición
-function asignarCerrarModalEditar() {
-  const modalEditar = document.getElementById("modal-editar");
-  if (modalEditar) {
-    // Busca el botón por clase o id
-    const btnCerrar = modalEditar.querySelector(".btn-cerrar") || document.getElementById("btn-cerrar-modal-editar");
-    if (btnCerrar) {
-      btnCerrar.onclick = () => {
-        modalEditar.style.display = "none";
-      };
-    }
+document.addEventListener("DOMContentLoaded", function() {
+  const btnCerrar = document.getElementById("btn-cerrar-modal");
+  if (btnCerrar) {
+    btnCerrar.onclick = function() {
+      document.getElementById("modal-editar").style.display = "none";
+    };
   }
-}
-document.addEventListener("DOMContentLoaded", asignarCerrarModalEditar);
+});
 
 async function editarMovimiento(id) {
   const res = await fetch(`/api/movimientos`);
