@@ -25,15 +25,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let modoOpciones = "";
   let tipoOpciones = "";
   let guardando = false;
+  let awesompleteInicio;
 
-  // --- Datalist para tipo de movimiento ---
-  let datalist = document.getElementById('datalist-tipo-movimiento');
-  if (!datalist) {
-    datalist = document.createElement('datalist');
-    datalist.id = 'datalist-tipo-movimiento';
-    document.body.appendChild(datalist);
+  // Inicializar Awesomplete para el campo de tipo de movimiento
+  awesompleteInicio = new Awesomplete(inputTipoMovimiento, {
+    list: [],
+    minChars: 0,
+    autoFirst: true,
+    maxItems: 999
+  });
+
+  // Actualizar opciones de Awesomplete
+  function actualizarAwesompleteInicio(tipo) {
+    let opciones = [];
+    if (tipo === 'ingreso') opciones = opcionesIngreso;
+    else if (tipo === 'egreso') opciones = opcionesEgreso;
+    if (awesompleteInicio) awesompleteInicio.list = opciones;
   }
-  inputTipoMovimiento.setAttribute('list', 'datalist-tipo-movimiento');
 
   // --- Definición de funciones ---
   function actualizarOpcionesTipoMovimiento() {
@@ -41,12 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(`/api/tipos_movimiento?tipo=${tipo}`)
       .then(res => res.json())
       .then(tipos => {
-        datalist.innerHTML = '';
-        tipos.forEach(tipoObj => {
-          const option = document.createElement('option');
-          option.value = tipoObj.nombre;
-          datalist.appendChild(option);
-        });
+        if (tipo === 'ingreso') {
+          opcionesIngreso = tipos.map(t => t.nombre);
+        } else if (tipo === 'egreso') {
+          opcionesEgreso = tipos.map(t => t.nombre);
+        }
+        actualizarAwesompleteInicio(tipo);
       });
   }
 
@@ -251,7 +259,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Event Listeners ---
-  tipoSelect.addEventListener('change', actualizarOpcionesTipoMovimiento);
+  tipoSelect.addEventListener('change', function(e) {
+    actualizarOpcionesTipoMovimiento();
+    inputTipoMovimiento.value = '';
+  });
+
+  // Al enfocar el input, muestra todas las opciones
+  inputTipoMovimiento.addEventListener("focus", function() {
+    this.value = "";
+    if (awesompleteInicio) awesompleteInicio.evaluate();
+  });
 
   btnAgregarEmpresa.addEventListener("click", () => {
     modoOpciones = "empresa";
