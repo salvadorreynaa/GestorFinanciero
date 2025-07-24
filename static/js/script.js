@@ -327,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const [anioFin, mesFin] = mesFinMultiple.value.split('-');
     const fechaFin = new Date(parseInt(anioFin), parseInt(mesFin) - 1, dia);
 
+    // Calculamos los meses incluyendo el mes final
     const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
                  (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
     
@@ -402,21 +403,24 @@ document.addEventListener("DOMContentLoaded", () => {
         .finally(() => guardando = false);
     } else {
       // Movimientos múltiples
-      const fechaInicio = new Date(fecha);
-      const diaInicio = fechaInicio.getDate();
+      const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
       const [anioFin, mesFin] = mesFinMultiple.value.split('-');
-      const fechaFin = new Date(anioFin, parseInt(mesFin) - 1, diaInicio);
       
       const movimientos = [];
-      let fechaActual = new Date(fechaInicio);
+      const fechaActual = new Date(parseInt(anioInicio), parseInt(mesInicio) - 1, parseInt(diaInicio));
+      const fechaFin = new Date(parseInt(anioFin), parseInt(mesFin) - 1, parseInt(diaInicio));
       
-      while (fechaActual <= fechaFin) {
-        movimientos.push(
-          crearMovimiento(fechaActual.toISOString().split('T')[0])
-        );
-        // Avanzar al siguiente mes
-        fechaActual.setMonth(fechaActual.getMonth() + 1);
-      }
+      // Asegurarnos de incluir el mes final
+      do {
+        const fechaStr = fechaActual.toISOString().split('T')[0];
+        movimientos.push(crearMovimiento(fechaStr));
+        
+        // Avanzar al siguiente mes manteniendo el día
+        const nuevoMes = fechaActual.getMonth() + 1;
+        const nuevoAnio = fechaActual.getFullYear() + Math.floor(nuevoMes / 12);
+        fechaActual.setFullYear(nuevoAnio);
+        fechaActual.setMonth(nuevoMes % 12);
+      } while (fechaActual <= fechaFin);
 
       Promise.all(movimientos)
         .then(() => {
