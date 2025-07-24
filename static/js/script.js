@@ -346,16 +346,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Construir la explicación de las fechas
     let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:\n`;
-    let fechaTemp = new Date(fechaInicio);
-    let contador = 0;
-    
-    while (contador < meses) {
-      const diaAjustado = ajustarFecha(fechaTemp.getFullYear(), fechaTemp.getMonth(), diaOriginal);
-      explicacion += `${diaAjustado}/${(fechaTemp.getMonth() + 1).toString().padStart(2, '0')}/${fechaTemp.getFullYear()}`;
-      if (contador < meses - 1) explicacion += ", ";
-      fechaTemp.setMonth(fechaTemp.getMonth() + 1);
-      contador++;
+    let mesActual = mesInicio;
+    let anioActual = parseInt(anioI);
+    let fechas = [];
+
+    // Generar todas las fechas
+    for (let i = 0; i < meses; i++) {
+      const mes = parseInt(mesActual) - 1; // Convertir a 0-based
+      const diaAjustado = ajustarFecha(anioActual, mes, diaOriginal);
+      fechas.push(`${diaAjustado}/${mesActual.toString().padStart(2, '0')}/${anioActual}`);
+      
+      mesActual++;
+      if (mesActual > 12) {
+        mesActual = 1;
+        anioActual++;
+      }
     }
+
+    explicacion += fechas.join(", ");
     
     explicacionMultiples.textContent = explicacion;
   }
