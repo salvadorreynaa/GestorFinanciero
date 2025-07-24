@@ -13,6 +13,65 @@ async function cargarTiposMovimiento() {
 let movimientosEliminados = [];
 let awesompleteModal;
 
+// Funciones para manejar fechas recurrentes
+function obtenerUltimoDiaMes(anio, mes) {
+  return new Date(anio, mes + 1, 0).getDate();
+}
+
+function ajustarFecha(anio, mes, dia) {
+  const ultimoDia = obtenerUltimoDiaMes(anio, mes);
+  return dia > ultimoDia ? ultimoDia : dia;
+}
+
+function formatearFecha(fecha) {
+  return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+}
+
+function actualizarExplicacionMultiplesEditar() {
+  const fechaInicioStr = document.getElementById("input-fecha").value;
+  if (!fechaInicioStr) return;
+
+  const [anioI, mesI, diaI] = fechaInicioStr.split('-');
+  const diaOriginal = parseInt(diaI);
+  const mesInicio = parseInt(mesI) - 1;
+
+  const diaAjustadoInicio = ajustarFecha(parseInt(anioI), mesInicio, diaOriginal);
+  const fechaInicio = new Date(parseInt(anioI), mesInicio, diaAjustadoInicio);
+
+  document.getElementById("editar-recordatorio-inicio").textContent = 
+    `Fecha de inicio: ${formatearFecha(fechaInicio)}`;
+  
+  const mesFinMultiple = document.getElementById("editar-mes-fin-multiple");
+  if (!mesFinMultiple.value) return;
+
+  const [anioFin, mesFin] = mesFinMultiple.value.split('-');
+  const mesFinal = parseInt(mesFin) - 1;
+  const diaAjustadoFin = ajustarFecha(parseInt(anioFin), mesFinal, diaOriginal);
+  const fechaFin = new Date(parseInt(anioFin), mesFinal, diaAjustadoFin);
+
+  const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
+               (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
+
+  let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:\n`;
+  let mesActual = mesInicio;
+  let anioActual = parseInt(anioI);
+  let fechas = [];
+
+  for (let i = 0; i < meses; i++) {
+    const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+    fechas.push(`${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`);
+    
+    mesActual++;
+    if (mesActual >= 12) {
+      mesActual = 0;
+      anioActual++;
+    }
+  }
+
+  explicacion += fechas.join(", ");
+  document.getElementById("editar-explicacion-multiples").textContent = explicacion;
+}
+
 // Función para actualizar las opciones de Awesomplete en el modal
 function actualizarAwesompleteModal(tipo) {
   let opciones = [];
@@ -343,6 +402,25 @@ document.getElementById("input-tipo").addEventListener("change", function(e) {
   document.getElementById("input-tipoMovimiento").value = "";
 });
 
+// Event listeners para movimientos recurrentes en edición
+document.getElementById("editar-activar-multiples").addEventListener('change', function() {
+  const opcionesMultiples = document.getElementById("editar-opciones-multiples");
+  opcionesMultiples.style.display = this.checked ? 'flex' : 'none';
+  if (this.checked) actualizarExplicacionMultiplesEditar();
+});
+
+document.getElementById("input-fecha").addEventListener('change', () => {
+  if (document.getElementById("editar-activar-multiples").checked) {
+    actualizarExplicacionMultiplesEditar();
+  }
+});
+
+document.getElementById("editar-mes-fin-multiple").addEventListener('change', () => {
+  if (document.getElementById("editar-activar-multiples").checked) {
+    actualizarExplicacionMultiplesEditar();
+  }
+});
+
 // Al enfocar el input, muestra todas las opciones
 document.getElementById("input-tipoMovimiento").addEventListener("focus", function() {
   this.value = "";
@@ -357,19 +435,9 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
   const tipoMovimiento = document.getElementById("input-tipoMovimiento").value.trim();
   const descripcion = document.getElementById("input-descripcion").value.trim();
   const fecha = document.getElementById("input-fecha").value.trim();
-  let mes = document.getElementById("input-mes").value.trim();
-  let año = "";
-  if (fecha && fecha.includes("-")) {
-    const partes = fecha.split("-");
-    año = partes[0];
-    if (!mes) {
-      const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-      mes = mesesNombres[parseInt(partes[1],10)-1];
-    }
-  }
   const monto = parseFloat(document.getElementById("input-monto").value);
   const empresa = document.getElementById("input-empresa").value.trim();
-  const mensual_auto = document.getElementById("input-mensual-auto")?.checked || false;
+  
   if (!fecha) {
     alert("Debes ingresar una fecha válida");
     return;
@@ -378,17 +446,91 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
     alert("Monto inválido");
     return;
   }
-  const body = {
-    tipo,
-    tipoMovimiento,
-    descripcion,
-    fecha,
-    mes,
-    año,
-    monto,
-    empresa,
-    mensual_auto
-  };
+
+  const activarMultiples = document.getElementById("editar-activar-multiples").checked;
+  const mesFinMultiple = document.getElementById("editar-mes-fin-multiple").value;
+
+  if (activarMultiples && mesFinMultiple) {
+    // Crear movimientos múltiples
+    const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
+    const [anioFin, mesFin] = mesFinMultiple.split('-');
+    
+    let mesActual = parseInt(mesInicio) - 1;
+    let anioActual = parseInt(anioInicio);
+    const diaOriginal = parseInt(diaInicio);
+    const mesFinal = parseInt(mesFin) - 1;
+    const anioFinal = parseInt(anioFin);
+    
+    const mesesTotales = (anioFinal - anioActual) * 12 + (mesFinal - mesActual);
+    
+    for (let i = 0; i <= mesesTotales; i++) {
+      const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+      const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
+      const fechaStr = fechaAjustada.toISOString().split('T')[0];
+      
+      const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      const mesStr = mesesNombres[mesActual];
+      
+      const body = {
+        tipo,
+        tipoMovimiento,
+        descripcion,
+        fecha: fechaStr,
+        mes: mesStr,
+        año: anioActual.toString(),
+        monto,
+        empresa
+      };
+
+      if (i === 0) {
+        // Actualizar el movimiento original
+        await fetch(`/api/movimientos/${id}`, {
+          method: "PATCH",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+      } else {
+        // Crear nuevos movimientos
+        await fetch('/api/movimientos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      }
+      
+      mesActual++;
+      if (mesActual > 11) {
+        mesActual = 0;
+        anioActual++;
+      }
+    }
+  } else {
+    // Movimiento único
+    const partes = fecha.split("-");
+    const año = partes[0];
+    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const mes = mesesNombres[parseInt(partes[1],10)-1];
+    
+    const body = {
+      tipo,
+      tipoMovimiento,
+      descripcion,
+      fecha,
+      mes,
+      año,
+      monto,
+      empresa
+    };
+    
+    await fetch(`/api/movimientos/${id}`, {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    });
+  }
+  
+  document.getElementById("modal-editar").style.display = "none";
+  await cargarMovimientos();
   await fetch(`/api/movimientos/${id}`, {
     method: "PATCH",
     headers: {"Content-Type": "application/json"},
