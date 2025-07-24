@@ -352,13 +352,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Generar todas las fechas
     for (let i = 0; i < meses; i++) {
-      const mes = parseInt(mesActual) - 1; // Convertir a 0-based
-      const diaAjustado = ajustarFecha(anioActual, mes, diaOriginal);
-      fechas.push(`${diaAjustado}/${mesActual.toString().padStart(2, '0')}/${anioActual}`);
+      const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+      fechas.push(`${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`);
       
       mesActual++;
-      if (mesActual > 12) {
-        mesActual = 1;
+      if (mesActual >= 12) {
+        mesActual = 0;
         anioActual++;
       }
     }
