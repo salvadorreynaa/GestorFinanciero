@@ -52,7 +52,12 @@ function actualizarExplicacionMultiplesEditar() {
   const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
                (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
 
-  let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:\n`;
+  // Restamos 1 porque el primer movimiento ya existe
+  const nuevosMovimientos = meses - 1;
+  let explicacion = nuevosMovimientos > 0 ? 
+    `Se crearán ${nuevosMovimientos} movimiento${nuevosMovimientos > 1 ? 's' : ''} adicional${nuevosMovimientos > 1 ? 'es' : ''} en las siguientes fechas:\n` :
+    'No se crearán movimientos adicionales.';
+    
   let mesActual = mesInicio;
   let anioActual = parseInt(anioI);
   let fechas = [];
@@ -450,6 +455,10 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
   const activarMultiples = document.getElementById("editar-activar-multiples").checked;
   const mesFinMultiple = document.getElementById("editar-mes-fin-multiple").value;
 
+  // Preparar datos comunes
+  const partes = fecha.split("-");
+  const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  
   if (activarMultiples && mesFinMultiple) {
     // Crear movimientos múltiples
     const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
@@ -463,40 +472,53 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
     
     const mesesTotales = (anioFinal - anioActual) * 12 + (mesFinal - mesActual);
     
-    for (let i = 0; i <= mesesTotales; i++) {
+    // Primero actualizamos el movimiento original
+    const bodyOriginal = {
+      tipo,
+      tipoMovimiento,
+      descripcion,
+      fecha,
+      mes: mesesNombres[parseInt(mesInicio) - 1],
+      año: anioInicio,
+      monto,
+      empresa
+    };
+
+    await fetch(`/api/movimientos/${id}`, {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(bodyOriginal)
+    });
+
+    // Avanzamos al siguiente mes para crear los nuevos
+    mesActual++;
+    if (mesActual > 11) {
+      mesActual = 0;
+      anioActual++;
+    }
+
+    // Crear los movimientos adicionales
+    for (let i = 1; i <= mesesTotales; i++) {
       const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
       const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
       const fechaStr = fechaAjustada.toISOString().split('T')[0];
-      
-      const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-      const mesStr = mesesNombres[mesActual];
       
       const body = {
         tipo,
         tipoMovimiento,
         descripcion,
         fecha: fechaStr,
-        mes: mesStr,
+        mes: mesesNombres[mesActual],
         año: anioActual.toString(),
         monto,
         empresa
       };
 
-      if (i === 0) {
-        // Actualizar el movimiento original
-        await fetch(`/api/movimientos/${id}`, {
-          method: "PATCH",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(body)
-        });
-      } else {
-        // Crear nuevos movimientos
-        await fetch('/api/movimientos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-      }
+      await fetch('/api/movimientos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
       
       mesActual++;
       if (mesActual > 11) {
@@ -506,18 +528,13 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
     }
   } else {
     // Movimiento único
-    const partes = fecha.split("-");
-    const año = partes[0];
-    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-    const mes = mesesNombres[parseInt(partes[1],10)-1];
-    
     const body = {
       tipo,
       tipoMovimiento,
       descripcion,
       fecha,
-      mes,
-      año,
+      mes: mesesNombres[parseInt(partes[1],10)-1],
+      año: partes[0],
       monto,
       empresa
     };
