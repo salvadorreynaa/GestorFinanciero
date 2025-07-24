@@ -7,6 +7,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = 'vayavalla2512'  # Clave secreta para las sesiones
 
+# Configuraciones de seguridad para las sesiones
+app.config['SESSION_COOKIE_SECURE'] = True  # Solo enviar cookie por HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevenir acceso por JavaScript
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Protección contra CSRF
+app.config['PERMANENT_SESSION_LIFETIME'] = 7200  # Sesión expira después de 2 horas de inactividad
+
 # Credenciales (en un entorno real, esto debería estar en una base de datos)
 VALID_USERNAME = "vayavalla"
 VALID_PASSWORD = generate_password_hash("palayenti2512")
@@ -43,6 +49,8 @@ def login():
         password = request.form.get('password')
         
         if username == VALID_USERNAME and password == "palayenti2512":
+            # Crear una sesión no permanente (se elimina al cerrar el navegador)
+            session.permanent = False
             session['logged_in'] = True
             return redirect(url_for('index'))
         return render_template('login.html', error='Usuario o contraseña incorrectos')
