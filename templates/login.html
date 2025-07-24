@@ -13,17 +13,19 @@
             padding: 0;
         }
 
-        body {
+        html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f5f5f5;
         }
 
         .login-container {
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            padding: 50px 20px;
-            min-height: 100vh;
-            background-color: #f5f5f5;
+            padding-top: 20px;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .login-box {
@@ -101,11 +103,12 @@
         /* Media queries para diferentes tamaños de pantalla */
         @media (max-width: 480px) {
             .login-container {
-                padding: 20px 16px;
+                padding: 10px 16px;
             }
 
             .login-box {
                 padding: 1.5rem;
+                margin-top: 0;
             }
 
             .login-logo img {
@@ -121,11 +124,11 @@
 
         @media (max-height: 600px) {
             .login-container {
-                padding-top: 30px;
+                padding-top: 5px;
             }
 
             .login-logo {
-                margin-bottom: 1rem;
+                margin-bottom: 0.5rem;
             }
 
             .login-logo img {
