@@ -1,8 +1,33 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify, request
+from flask import Flask, render_template, request, redirect, url_for, jsonify, request, session
+from functools import wraps
 import psycopg2
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+app.secret_key = 'vayavalla2512'  # Clave secreta para las sesiones
+
+# Credenciales (en un entorno real, esto debería estar en una base de datos)
+VALID_USERNAME = "vayavalla"
+VALID_PASSWORD = generate_password_hash("palayenti2512")
+
+# Decorador para proteger rutas
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Decorador para proteger rutas API
+def api_login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return jsonify({"error": "No autorizado"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Conexión a PostgreSQL usando variable de entorno DATABASE_URL
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -11,7 +36,26 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == VALID_USERNAME and password == "palayenti2512":
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        return render_template('login.html', error='Usuario o contraseña incorrectos')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -23,16 +67,19 @@ def index():
 
 # Endpoint para estadísticas
 @app.route('/estadisticas')
+@login_required
 def estadisticas():
     return render_template('estadisticas.html')
 
 # Endpoint para contactos
 @app.route('/contactos')
+@login_required
 def contactos():
     return render_template('contactos.html')
 
 # Endpoint para movimientos
 @app.route('/movimientos')
+@login_required
 def movimientos():
     return render_template('movimientos.html')
 
@@ -68,6 +115,7 @@ def agregar():
 
 # --- API endpoint para estadísticas ---
 @app.route('/api/estadisticas', methods=['GET'])
+@api_login_required
 def api_estadisticas():
     try:
         mes = request.args.get('mes')
@@ -130,6 +178,7 @@ def api_estadisticas():
 
 # --- API endpoints para movimientos ---
 @app.route('/api/movimientos', methods=['GET'])
+@api_login_required
 def api_movimientos():
     try:
         conn = get_db_connection()
@@ -165,6 +214,7 @@ def api_movimientos():
         print('Error en /api/movimientos:', e)
         return jsonify([]), 200
 @app.route('/api/movimientos/<int:id>/estado', methods=['PATCH'])
+@api_login_required
 def api_movimiento_estado(id):
     data = request.get_json()
     nuevo_estado = data.get('estado')
