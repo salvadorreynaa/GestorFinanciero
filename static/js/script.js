@@ -305,34 +305,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función para actualizar la explicación de múltiples movimientos
   function actualizarExplicacionMultiples() {
-    // Usamos la fecha directamente del input
     const fechaInicioStr = inputFecha.value;
     if (!fechaInicioStr) return;
 
-    // Parseamos la fecha manualmente para evitar problemas de zona horaria
     const [anioI, mesI, diaI] = fechaInicioStr.split('-');
-    const fechaInicio = new Date(anioI, parseInt(mesI) - 1, parseInt(diaI));
-    const dia = parseInt(diaI);
+    const diaOriginal = parseInt(diaI);
+    
+    // Función para obtener el último día del mes
+    const obtenerUltimoDiaMes = (anio, mes) => {
+      return new Date(anio, mes + 1, 0).getDate();
+    };
+
+    // Función para ajustar la fecha al último día si es necesario
+    const ajustarFecha = (anio, mes, dia) => {
+      const ultimoDia = obtenerUltimoDiaMes(anio, mes);
+      return dia > ultimoDia ? ultimoDia : dia;
+    };
 
     // Formateamos la fecha manualmente
     const formatearFecha = (fecha) => {
       return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
     };
 
+    // Ajustamos la fecha de inicio si es necesario
+    const mesInicio = parseInt(mesI) - 1;
+    const diaAjustadoInicio = ajustarFecha(parseInt(anioI), mesInicio, diaOriginal);
+    const fechaInicio = new Date(parseInt(anioI), mesInicio, diaAjustadoInicio);
+
     recordatorioInicio.textContent = `Fecha de inicio: ${formatearFecha(fechaInicio)}`;
     
     if (!mesFinMultiple.value) return;
 
-    // Para la fecha final, usamos el mismo día que la fecha inicial
     const [anioFin, mesFin] = mesFinMultiple.value.split('-');
-    const fechaFin = new Date(parseInt(anioFin), parseInt(mesFin) - 1, dia);
+    const mesFinal = parseInt(mesFin) - 1;
+    const diaAjustadoFin = ajustarFecha(parseInt(anioFin), mesFinal, diaOriginal);
+    const fechaFin = new Date(parseInt(anioFin), mesFinal, diaAjustadoFin);
 
-    // Calculamos los meses incluyendo el mes final
     const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
                  (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
+
+    // Construir la explicación de las fechas
+    let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:\n`;
+    let fechaTemp = new Date(fechaInicio);
+    let contador = 0;
     
-    explicacionMultiples.textContent = 
-      `Se crearán ${meses} movimientos, uno cada mes el día ${dia}, desde ${formatearFecha(fechaInicio)} hasta ${formatearFecha(fechaFin)}`;
+    while (contador < meses) {
+      const diaAjustado = ajustarFecha(fechaTemp.getFullYear(), fechaTemp.getMonth(), diaOriginal);
+      explicacion += `${diaAjustado}/${(fechaTemp.getMonth() + 1).toString().padStart(2, '0')}/${fechaTemp.getFullYear()}`;
+      if (contador < meses - 1) explicacion += ", ";
+      fechaTemp.setMonth(fechaTemp.getMonth() + 1);
+      contador++;
+    }
+    
+    explicacionMultiples.textContent = explicacion;
   }
 
   // Event listener para el checkbox de múltiples movimientos
@@ -367,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
     guardando = true;
 
     // Función para crear un movimiento para una fecha específica
+
     const crearMovimiento = async (fechaMovimiento) => {
       const fechaObj = new Date(fechaMovimiento);
       const mesMovimiento = fechaObj.toLocaleString('es', { month: 'long' });
@@ -407,20 +433,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const [anioFin, mesFin] = mesFinMultiple.value.split('-');
       
       const movimientos = [];
-      const fechaActual = new Date(parseInt(anioInicio), parseInt(mesInicio) - 1, parseInt(diaInicio));
-      const fechaFin = new Date(parseInt(anioFin), parseInt(mesFin) - 1, parseInt(diaInicio));
+      let mesActual = parseInt(mesInicio) - 1;  // 0-based
+      let anioActual = parseInt(anioInicio);
+      const diaOriginal = parseInt(diaInicio);
+      const mesFinal = parseInt(mesFin) - 1;
+      const anioFinal = parseInt(anioFin);
       
       // Asegurarnos de incluir el mes final
       do {
-        const fechaStr = fechaActual.toISOString().split('T')[0];
+        // Ajustar el día al último día del mes si es necesario
+        const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+        const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
+        const fechaStr = fechaAjustada.toISOString().split('T')[0];
         movimientos.push(crearMovimiento(fechaStr));
         
-        // Avanzar al siguiente mes manteniendo el día
-        const nuevoMes = fechaActual.getMonth() + 1;
-        const nuevoAnio = fechaActual.getFullYear() + Math.floor(nuevoMes / 12);
-        fechaActual.setFullYear(nuevoAnio);
-        fechaActual.setMonth(nuevoMes % 12);
-      } while (fechaActual <= fechaFin);
+        // Avanzar al siguiente mes
+        mesActual++;
+        if (mesActual > 11) {
+          mesActual = 0;
+          anioActual++;
+        }
+      } while (anioActual < anioFinal || (anioActual === anioFinal && mesActual <= mesFinal));
 
       Promise.all(movimientos)
         .then(() => {
