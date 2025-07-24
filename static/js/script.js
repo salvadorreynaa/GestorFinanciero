@@ -303,6 +303,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Función para actualizar la explicación de múltiples movimientos
+  function actualizarExplicacionMultiples() {
+    const fechaInicio = new Date(inputFecha.value);
+    if (!fechaInicio || isNaN(fechaInicio.getTime())) return;
+
+    const dia = fechaInicio.getDate();
+    recordatorioInicio.textContent = `Fecha de inicio: ${fechaInicio.toLocaleDateString()}`;
+    
+    const fechaFin = mesFinMultiple.value ? new Date(mesFinMultiple.value + '-' + dia.toString().padStart(2, '0')) : null;
+    if (!fechaFin || isNaN(fechaFin.getTime())) return;
+
+    const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
+                 (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
+    
+    explicacionMultiples.textContent = 
+      `Se crearán ${meses} movimientos, uno cada mes el día ${dia}, desde ${fechaInicio.toLocaleDateString()} hasta ${fechaFin.toLocaleDateString()}`;
+  }
+
+  // Event listener para el checkbox de múltiples movimientos
+  activarMultiples.addEventListener('change', function() {
+    opcionesMultiples.style.display = this.checked ? 'flex' : 'none';
+    if (this.checked) actualizarExplicacionMultiples();
+  });
+
+  // Event listeners para actualizar la explicación
+  inputFecha.addEventListener('change', () => {
+    if (activarMultiples.checked) actualizarExplicacionMultiples();
+  });
+
+  mesFinMultiple.addEventListener('change', () => {
+    if (activarMultiples.checked) actualizarExplicacionMultiples();
+  });
+
   formulario.addEventListener("submit", function (e) {
     e.preventDefault();
     if (guardando) return;
@@ -319,26 +352,70 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) return;
     guardando = true;
 
-    const nuevoMovimiento = {
-      tipo,
-      tipoMovimiento,
-      descripcion,
-      fecha,
-      mes,
-      anio,
-      monto,
-      empresa,
-      estado: "Pendiente"
+    // Función para crear un movimiento para una fecha específica
+    const crearMovimiento = async (fechaMovimiento) => {
+      const fechaObj = new Date(fechaMovimiento);
+      const mesMovimiento = fechaObj.toLocaleString('es', { month: 'long' });
+      const anioMovimiento = fechaObj.getFullYear().toString();
+      
+      const nuevoMovimiento = {
+        tipo,
+        tipoMovimiento,
+        descripcion,
+        fecha: fechaMovimiento,
+        mes: mesMovimiento.charAt(0).toUpperCase() + mesMovimiento.slice(1),
+        anio: anioMovimiento,
+        monto,
+        empresa,
+        estado: "Pendiente"
+      };
+
+      return fetch('/api/movimientos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevoMovimiento)
+      });
     };
 
-    fetch('/api/movimientos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(nuevoMovimiento)
-    }).then(() => {
-      formulario.reset();
-      mostrarToast("✅ Movimiento guardado correctamente.");
-    }).catch(console.error).finally(() => guardando = false);
+    // Procesar movimientos únicos o múltiples
+    if (!activarMultiples.checked || !mesFinMultiple.value) {
+      // Movimiento único
+      crearMovimiento(fecha)
+        .then(() => {
+          formulario.reset();
+          mostrarToast("✅ Movimiento guardado correctamente.");
+        })
+        .catch(console.error)
+        .finally(() => guardando = false);
+    } else {
+      // Movimientos múltiples
+      const fechaInicio = new Date(fecha);
+      const diaInicio = fechaInicio.getDate();
+      const [anioFin, mesFin] = mesFinMultiple.value.split('-');
+      const fechaFin = new Date(anioFin, parseInt(mesFin) - 1, diaInicio);
+      
+      const movimientos = [];
+      let fechaActual = new Date(fechaInicio);
+      
+      while (fechaActual <= fechaFin) {
+        movimientos.push(
+          crearMovimiento(fechaActual.toISOString().split('T')[0])
+        );
+        // Avanzar al siguiente mes
+        fechaActual.setMonth(fechaActual.getMonth() + 1);
+      }
+
+      Promise.all(movimientos)
+        .then(() => {
+          formulario.reset();
+          mostrarToast(`✅ ${movimientos.length} movimientos guardados correctamente.`);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Ocurrió un error al guardar algunos movimientos. Por favor, verifica en la sección de movimientos.');
+        })
+        .finally(() => guardando = false);
+    }
   });
 
   // --- Inicialización ---
