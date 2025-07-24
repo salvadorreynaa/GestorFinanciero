@@ -402,8 +402,13 @@ async function editarMovimiento(id) {
 }
 
 // Cambia las opciones de Awesomplete al cambiar el tipo en el modal
-document.getElementById("input-tipo").addEventListener("change", function(e) {
-  actualizarAwesompleteModal(e.target.value);
+document.getElementById("input-tipo").addEventListener("change", async function(e) {
+  const tipo = e.target.value;
+  // Primero recargamos los tipos de movimiento
+  await cargarTiposMovimiento();
+  // Luego actualizamos el Awesomplete con los nuevos tipos
+  actualizarAwesompleteModal(tipo);
+  // Limpiamos el campo de tipo de movimiento
   document.getElementById("input-tipoMovimiento").value = "";
 });
 
