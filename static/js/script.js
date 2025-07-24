@@ -375,6 +375,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activarMultiples.checked) actualizarExplicacionMultiples();
   });
 
+  // Función auxiliar para obtener el último día del mes
+  const obtenerUltimoDiaMes = (anio, mes) => {
+    return new Date(anio, mes + 1, 0).getDate();
+  };
+
+  // Función auxiliar para ajustar la fecha al último día si es necesario
+  const ajustarFecha = (anio, mes, dia) => {
+    const ultimoDia = obtenerUltimoDiaMes(anio, mes);
+    return dia > ultimoDia ? ultimoDia : dia;
+  };
+
   formulario.addEventListener("submit", function (e) {
     e.preventDefault();
     if (guardando) return;
@@ -439,9 +450,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const mesFinal = parseInt(mesFin) - 1;
       const anioFinal = parseInt(anioFin);
       
-      // Asegurarnos de incluir el mes final
-      do {
-        // Ajustar el día al último día del mes si es necesario
+      // Calcular el número total de meses
+      const mesesTotales = (anioFinal - anioActual) * 12 + (mesFinal - mesActual);
+      
+      // Crear un movimiento para cada mes
+      for (let i = 0; i <= mesesTotales; i++) {
         const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
         const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
         const fechaStr = fechaAjustada.toISOString().split('T')[0];
@@ -453,7 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
           mesActual = 0;
           anioActual++;
         }
-      } while (anioActual < anioFinal || (anioActual === anioFinal && mesActual <= mesFinal));
+      }
 
       Promise.all(movimientos)
         .then(() => {
