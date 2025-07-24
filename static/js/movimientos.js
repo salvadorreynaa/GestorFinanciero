@@ -435,127 +435,123 @@ document.getElementById("input-tipoMovimiento").addEventListener("focus", functi
 // Guardar cambios desde el modal
 document.getElementById("form-editar").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const id = document.getElementById("input-index").value;
-  const tipo = document.getElementById("input-tipo").value.trim();
-  const tipoMovimiento = document.getElementById("input-tipoMovimiento").value.trim();
-  const descripcion = document.getElementById("input-descripcion").value.trim();
-  const fecha = document.getElementById("input-fecha").value.trim();
-  const monto = parseFloat(document.getElementById("input-monto").value);
-  const empresa = document.getElementById("input-empresa").value.trim();
-  
-  if (!fecha) {
-    alert("Debes ingresar una fecha válida");
-    return;
-  }
-  if (isNaN(monto) || monto < 0) {
-    alert("Monto inválido");
-    return;
-  }
-
-  const activarMultiples = document.getElementById("editar-activar-multiples").checked;
-  const mesFinMultiple = document.getElementById("editar-mes-fin-multiple").value;
-
-  // Preparar datos comunes
-  const partes = fecha.split("-");
-  const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  
-  if (activarMultiples && mesFinMultiple) {
-    // Crear movimientos múltiples
-    const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
-    const [anioFin, mesFin] = mesFinMultiple.split('-');
+  try {
+    const id = document.getElementById("input-index").value;
+    const tipo = document.getElementById("input-tipo").value.trim();
+    const tipoMovimiento = document.getElementById("input-tipoMovimiento").value.trim();
+    const descripcion = document.getElementById("input-descripcion").value.trim();
+    const fecha = document.getElementById("input-fecha").value.trim();
+    const monto = parseFloat(document.getElementById("input-monto").value);
+    const empresa = document.getElementById("input-empresa").value.trim();
     
-    let mesActual = parseInt(mesInicio) - 1;
-    let anioActual = parseInt(anioInicio);
-    const diaOriginal = parseInt(diaInicio);
-    const mesFinal = parseInt(mesFin) - 1;
-    const anioFinal = parseInt(anioFin);
-    
-    const mesesTotales = (anioFinal - anioActual) * 12 + (mesFinal - mesActual);
-    
-    // Primero actualizamos el movimiento original
-    const bodyOriginal = {
-      tipo,
-      tipoMovimiento,
-      descripcion,
-      fecha,
-      mes: mesesNombres[parseInt(mesInicio) - 1],
-      año: anioInicio,
-      monto,
-      empresa
-    };
-
-    await fetch(`/api/movimientos/${id}`, {
-      method: "PATCH",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(bodyOriginal)
-    });
-
-    // Avanzamos al siguiente mes para crear los nuevos
-    mesActual++;
-    if (mesActual > 11) {
-      mesActual = 0;
-      anioActual++;
+    if (!fecha) {
+      alert("Debes ingresar una fecha válida");
+      return;
+    }
+    if (isNaN(monto) || monto < 0) {
+      alert("Monto inválido");
+      return;
     }
 
-    // Crear los movimientos adicionales
-    for (let i = 1; i <= mesesTotales; i++) {
-      const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
-      const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
-      const fechaStr = fechaAjustada.toISOString().split('T')[0];
+    const activarMultiples = document.getElementById("editar-activar-multiples").checked;
+    const mesFinMultiple = document.getElementById("editar-mes-fin-multiple").value;
+    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    
+    if (activarMultiples && mesFinMultiple) {
+      // Crear movimientos múltiples
+      const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
+      const [anioFin, mesFin] = mesFinMultiple.split('-');
       
-      const body = {
+      let mesActual = parseInt(mesInicio) - 1;
+      let anioActual = parseInt(anioInicio);
+      const diaOriginal = parseInt(diaInicio);
+      const mesFinal = parseInt(mesFin) - 1;
+      const anioFinal = parseInt(anioFin);
+      
+      const mesesTotales = (anioFinal - anioActual) * 12 + (mesFinal - mesActual);
+      
+      // Primero actualizamos el movimiento original
+      const bodyOriginal = {
         tipo,
         tipoMovimiento,
         descripcion,
-        fecha: fechaStr,
-        mes: mesesNombres[mesActual],
-        año: anioActual.toString(),
+        fecha,
+        mes: mesesNombres[parseInt(mesInicio) - 1],
+        año: anioInicio,
         monto,
         empresa
       };
 
-      await fetch('/api/movimientos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+      await fetch(`/api/movimientos/${id}`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(bodyOriginal)
       });
-      
+
+      // Avanzamos al siguiente mes para crear los nuevos
       mesActual++;
       if (mesActual > 11) {
         mesActual = 0;
         anioActual++;
       }
+
+      // Crear los movimientos adicionales
+      for (let i = 1; i <= mesesTotales; i++) {
+        const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+        const fechaAjustada = new Date(anioActual, mesActual, diaAjustado);
+        const fechaStr = fechaAjustada.toISOString().split('T')[0];
+        
+        const bodyNuevo = {
+          tipo,
+          tipoMovimiento,
+          descripcion,
+          fecha: fechaStr,
+          mes: mesesNombres[mesActual],
+          año: anioActual.toString(),
+          monto,
+          empresa
+        };
+
+        await fetch('/api/movimientos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyNuevo)
+        });
+        
+        mesActual++;
+        if (mesActual > 11) {
+          mesActual = 0;
+          anioActual++;
+        }
+      }
+    } else {
+      // Movimiento único
+      const partes = fecha.split("-");
+      const bodyUnico = {
+        tipo,
+        tipoMovimiento,
+        descripcion,
+        fecha,
+        mes: mesesNombres[parseInt(partes[1],10)-1],
+        año: partes[0],
+        monto,
+        empresa
+      };
+      
+      await fetch(`/api/movimientos/${id}`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(bodyUnico)
+      });
     }
-  } else {
-    // Movimiento único
-    const body = {
-      tipo,
-      tipoMovimiento,
-      descripcion,
-      fecha,
-      mes: mesesNombres[parseInt(partes[1],10)-1],
-      año: partes[0],
-      monto,
-      empresa
-    };
     
-    await fetch(`/api/movimientos/${id}`, {
-      method: "PATCH",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(body)
-    });
+    document.getElementById("modal-editar").style.display = "none";
+    await cargarMovimientos();
+    mostrarToast("✅ Movimiento editado correctamente.");
+  } catch (error) {
+    console.error('Error al guardar el movimiento:', error);
+    alert('Ocurrió un error al guardar el movimiento. Por favor, intenta de nuevo.');
   }
-  
-  document.getElementById("modal-editar").style.display = "none";
-  await cargarMovimientos();
-  await fetch(`/api/movimientos/${id}`, {
-    method: "PATCH",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body)
-  });
-  document.getElementById("modal-editar").style.display = "none";
-  await cargarMovimientos();
-  mostrarToast("✅ Movimiento editado correctamente.");
 });
 
 
