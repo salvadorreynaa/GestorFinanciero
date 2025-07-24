@@ -305,20 +305,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función para actualizar la explicación de múltiples movimientos
   function actualizarExplicacionMultiples() {
-    const fechaInicio = new Date(inputFecha.value);
-    if (!fechaInicio || isNaN(fechaInicio.getTime())) return;
+    // Usamos la fecha directamente del input
+    const fechaInicioStr = inputFecha.value;
+    if (!fechaInicioStr) return;
 
-    const dia = fechaInicio.getDate();
-    recordatorioInicio.textContent = `Fecha de inicio: ${fechaInicio.toLocaleDateString()}`;
+    // Parseamos la fecha manualmente para evitar problemas de zona horaria
+    const [anioI, mesI, diaI] = fechaInicioStr.split('-');
+    const fechaInicio = new Date(anioI, parseInt(mesI) - 1, parseInt(diaI));
+    const dia = parseInt(diaI);
+
+    // Formateamos la fecha manualmente
+    const formatearFecha = (fecha) => {
+      return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+    };
+
+    recordatorioInicio.textContent = `Fecha de inicio: ${formatearFecha(fechaInicio)}`;
     
-    const fechaFin = mesFinMultiple.value ? new Date(mesFinMultiple.value + '-' + dia.toString().padStart(2, '0')) : null;
-    if (!fechaFin || isNaN(fechaFin.getTime())) return;
+    if (!mesFinMultiple.value) return;
+
+    // Para la fecha final, usamos el mismo día que la fecha inicial
+    const [anioFin, mesFin] = mesFinMultiple.value.split('-');
+    const fechaFin = new Date(parseInt(anioFin), parseInt(mesFin) - 1, dia);
 
     const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
                  (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
     
     explicacionMultiples.textContent = 
-      `Se crearán ${meses} movimientos, uno cada mes el día ${dia}, desde ${fechaInicio.toLocaleDateString()} hasta ${fechaFin.toLocaleDateString()}`;
+      `Se crearán ${meses} movimientos, uno cada mes el día ${dia}, desde ${formatearFecha(fechaInicio)} hasta ${formatearFecha(fechaFin)}`;
   }
 
   // Event listener para el checkbox de múltiples movimientos
