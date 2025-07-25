@@ -30,18 +30,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Cerrar menú al cambiar orientación del dispositivo
-    window.addEventListener('orientationchange', closeMenuFunc);
+    window.addEventListener('orientationchange', toggleMenu);
 
-    // Cerrar menú al redimensionar a vista desktop
-    window.addEventListener('resize', function() {
-        if (window.innerWidth >= 992) {
-            closeMenuFunc();
-        }
-    });
-
-    // Event listener para enlaces del menú móvil
-    const mobileLinks = document.querySelectorAll('.mobile-menu-items a');
-    mobileLinks.forEach(link => {
-        link.addEventListener('click', closeMenuFunc);
+    // Event listener para enlaces del menú
+    const links = document.querySelectorAll('nav a');
+    links.forEach(link => {
+        link.addEventListener('click', toggleMenu);
     });
 });

@@ -24,18 +24,20 @@ header {
   align-items: center;
   padding: 10px 20px;
   background-color: #ffffff;
-  height: 60px;
+  height: 90px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
   position: fixed;
   top: 0;
   width: 100%;
+  border-bottom: 5px solid #ddd;
   z-index: 3000;
 }
 
 header img {
-  height: 40px;
+  height: 150px;
   width: auto;
-  margin-right: 20px;
+  margin-right: 200px;
+  margin-left: 100px;
 }
 
 nav {
