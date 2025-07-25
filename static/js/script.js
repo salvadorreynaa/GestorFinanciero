@@ -303,9 +303,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert('Error al actualizar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
               })
               .finally(() => hideSpinner());
-              });
             } else if (state.modoOpciones === "tipo") {
-              fetch(`${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}?tipo=${state.tipoOpciones}`, {
+              if (!valorAntiguo || !state.tipoOpciones) {
+                alert('Error: No se pudo obtener el tipo de movimiento a editar');
+                hideSpinner();
+                return;
+              }
+
+              const url = `${baseUrl}/api/tipos_movimiento/editar/${encodeURIComponent(valorAntiguo)}?tipo=${state.tipoOpciones}`;
+              console.log('Intentando actualizar tipo de movimiento en:', url);
+
+              fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre: nuevoValor })
@@ -325,7 +333,8 @@ document.addEventListener("DOMContentLoaded", () => {
               .catch(error => {
                 console.error('Error:', error);
                 alert('Error al actualizar tipo de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
-              });
+              })
+              .finally(() => hideSpinner());
             }
           }
           if (e.key === "Escape") {
