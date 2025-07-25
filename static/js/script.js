@@ -8,8 +8,12 @@ console.warn = function() {
 };
 
 // Funciones para el spinner
-const showSpinner = () => document.getElementById('spinner').classList.add('loading');
-const hideSpinner = () => document.getElementById('spinner').classList.remove('loading');
+const showSpinner = () => document.getElementById('spinner')?.classList.add('loading');
+const hideSpinner = () => document.getElementById('spinner')?.classList.remove('loading');
+
+// Variables globales para opciones
+let opcionesIngreso = [];
+let opcionesEgreso = [];
 
 // Cache para datos
 const cache = {
@@ -47,7 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
     listaOpciones: document.getElementById("lista-opciones"),
     btnCerrarOpciones: document.getElementById("btn-cerrar-opciones"),
     btnAgregarEmpresa: document.getElementById("btn-agregar-empresa"),
-    btnAgregarTipo: document.getElementById("btn-agregar-tipo")
+    btnAgregarTipo: document.getElementById("btn-agregar-tipo"),
+    descripcion: document.getElementById("descripcion"),
+    monto: document.getElementById("monto"),
+    mes: document.getElementById("mes"),
+    año: document.getElementById("año")
   };
 
   // Configuración de z-index para modal
@@ -121,22 +129,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cargarEmpresas() {
+    if (!elements.selectEmpresa) return;
     showSpinner();
     fetch('/api/empresas')
       .then(res => res.json())
       .then(empresas => {
-        selectEmpresa.innerHTML = '';
+        elements.selectEmpresa.innerHTML = '';
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = 'Seleccionar...';
         defaultOption.disabled = true;
         defaultOption.selected = true;
-        selectEmpresa.appendChild(defaultOption);
+        elements.selectEmpresa.appendChild(defaultOption);
         empresas.forEach(empresa => {
           const option = document.createElement('option');
           option.value = empresa.nombre;
           option.textContent = empresa.nombre;
-          selectEmpresa.appendChild(option);
+          elements.selectEmpresa.appendChild(option);
         });
       })
       .finally(() => hideSpinner());
@@ -154,8 +163,8 @@ document.addEventListener("DOMContentLoaded", () => {
           agregarEventosOpciones();
         })
         .finally(() => hideSpinner());
-    } else if (modoOpciones === "tipo") {
-      fetch(`/api/tipos_movimiento?tipo=${tipoOpciones}`)
+    } else if (state.modoOpciones === "tipo") {
+      fetch(`/api/tipos_movimiento?tipo=${state.tipoOpciones}`)
         .then(res => res.json())
         .then(tipos => {
           tipos.forEach(tipo => agregarElementoLista(tipo.nombre));
@@ -238,15 +247,15 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     });
 
-    listaOpciones.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
+    elements.listaOpciones?.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
       btn.onclick = function () {
         const valor = btn.dataset.valor;
         mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`).then(confirmado => {
           if (!confirmado) return;
           
-          const url = modoOpciones === "empresa" ? 
+          const url = state.modoOpciones === "empresa" ? 
             `/api/empresas/${encodeURIComponent(valor)}` : 
-            `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${tipoOpciones}`;
+            `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
           
           fetch(url, { method: 'DELETE' })
             .then(async res => {
@@ -256,9 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!data.status || data.status === 'error') {
                   throw new Error(data.error || 'Error al eliminar');
                 }
-                if (modoOpciones === "empresa") cargarEmpresas();
+                if (state.modoOpciones === "empresa") cargarEmpresas();
                 cargarListaOpciones();
-                if (modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();
+                if (state.modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();
               } catch (e) {
                 throw new Error('Error al eliminar: ' + text);
               }
@@ -413,7 +422,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función para actualizar la explicación de múltiples movimientos
   function actualizarExplicacionMultiples() {
-    const fechaInicioStr = inputFecha.value;
+    if (!elements.inputFecha || !elements.recordatorioInicio || !elements.mesFinMultiple || !elements.explicacionMultiples) return;
+    
+    const fechaInicioStr = elements.inputFecha.value;
     if (!fechaInicioStr) return;
 
     const [anioI, mesI, diaI] = fechaInicioStr.split('-');
@@ -440,11 +451,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const diaAjustadoInicio = ajustarFecha(parseInt(anioI), mesInicio, diaOriginal);
     const fechaInicio = new Date(parseInt(anioI), mesInicio, diaAjustadoInicio);
 
-    recordatorioInicio.textContent = `Fecha de inicio: ${formatearFecha(fechaInicio)}`;
+    elements.recordatorioInicio.textContent = `Fecha de inicio: ${formatearFecha(fechaInicio)}`;
     
-    if (!mesFinMultiple.value) return;
+    if (!elements.mesFinMultiple.value) return;
 
-    const [anioFin, mesFin] = mesFinMultiple.value.split('-');
+    const [anioFin, mesFin] = elements.mesFinMultiple.value.split('-');
     const mesFinal = parseInt(mesFin) - 1;
     const diaAjustadoFin = ajustarFecha(parseInt(anioFin), mesFinal, diaOriginal);
     const fechaFin = new Date(parseInt(anioFin), mesFinal, diaAjustadoFin);
@@ -472,47 +483,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     explicacion += fechas.join(", ");
     
-    explicacionMultiples.textContent = explicacion;
+    elements.explicacionMultiples.textContent = explicacion;
   }
 
   // Event listener para el checkbox de múltiples movimientos
-  activarMultiples.addEventListener('change', function() {
-    opcionesMultiples.style.display = this.checked ? 'flex' : 'none';
-    if (this.checked) actualizarExplicacionMultiples();
+  elements.activarMultiples?.addEventListener('change', function() {
+    if (elements.opcionesMultiples) {
+      elements.opcionesMultiples.style.display = this.checked ? 'flex' : 'none';
+      if (this.checked) actualizarExplicacionMultiples();
+    }
   });
 
   // Event listeners para actualizar la explicación
-  inputFecha.addEventListener('change', () => {
-    if (activarMultiples.checked) actualizarExplicacionMultiples();
+  elements.inputFecha?.addEventListener('change', () => {
+    if (elements.activarMultiples?.checked) actualizarExplicacionMultiples();
   });
 
-  mesFinMultiple.addEventListener('change', () => {
-    if (activarMultiples.checked) actualizarExplicacionMultiples();
+  elements.mesFinMultiple?.addEventListener('change', () => {
+    if (elements.activarMultiples?.checked) actualizarExplicacionMultiples();
   });
 
   // Función auxiliar para obtener el último día del mes
-  const obtenerUltimoDiaMes = (anio, mes) => {
-    return new Date(anio, mes + 1, 0).getDate();
-  };
 
-  // Función auxiliar para ajustar la fecha al último día si es necesario
-  const ajustarFecha = (anio, mes, dia) => {
-    const ultimoDia = obtenerUltimoDiaMes(anio, mes);
-    return dia > ultimoDia ? ultimoDia : dia;
-  };
 
-  formulario.addEventListener("submit", function (e) {
+  elements.formulario?.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (guardando) return;
+    if (state.guardando) return;
 
-    const tipo = tipoSelect.value;
-    const tipoMovimiento = inputTipoMovimiento.value.trim();
-    const descripcion = document.getElementById("descripcion").value.trim();
-    const fecha = inputFecha.value.trim();
-    const mes = document.getElementById("mes").value;
-    const anio = document.getElementById("año").value;
-    const monto = parseFloat(document.getElementById("monto").value);
-    const empresa = selectEmpresa.value;
+    const tipo = elements.tipoSelect?.value;
+    const tipoMovimiento = elements.inputTipoMovimiento?.value.trim();
+    const descripcion = elements.descripcion?.value.trim();
+    const fecha = elements.inputFecha?.value.trim();
+    const mes = elements.mes?.value;
+    const anio = elements.año?.value;
+    const monto = parseFloat(elements.monto?.value);
+    const empresa = elements.selectEmpresa?.value;
 
     if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) return;
     guardando = true;
@@ -544,15 +549,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Procesar movimientos únicos o múltiples
-    if (!activarMultiples.checked || !mesFinMultiple.value) {
+    if (!elements.activarMultiples?.checked || !elements.mesFinMultiple?.value) {
       // Movimiento único
+      showSpinner();
       crearMovimiento(fecha)
         .then(() => {
-          formulario.reset();
+          elements.formulario?.reset();
           mostrarToast("✅ Movimiento guardado correctamente.");
         })
         .catch(console.error)
-        .finally(() => guardando = false);
+        .finally(() => {
+          state.guardando = false;
+          hideSpinner();
+        });
     } else {
       // Movimientos múltiples
       const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
