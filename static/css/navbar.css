@@ -1,12 +1,20 @@
+/* Reset de estilos */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 /* Estilos para el header y navegación */
 header {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     background: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 60px; /* Altura fija para el header */
 }
 
 header img {
@@ -19,11 +27,12 @@ header img {
     display: none;
     border: none;
     background: none;
-    width: 30px;
-    height: 24px;
+    width: 24px;
+    height: 20px;
     position: relative;
     cursor: pointer;
     padding: 0;
+    margin-left: 1rem;
 }
 
 .hamburger-menu span {
@@ -63,7 +72,7 @@ nav.active {
 
 nav ul {
     list-style: none;
-    padding: 2rem 0;
+    padding: 1rem 0;
     margin: 0;
 }
 

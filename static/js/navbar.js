@@ -20,6 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.addEventListener('click', toggleMenu);
     }
 
+    // Cerrar menú al redimensionar a vista desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 769) { // Mismo breakpoint que en CSS
+            if (nav.classList.contains('active')) {
+                toggleMenu();
+            }
+        }
+    });
+
     // Cerrar menú al cambiar orientación del dispositivo
     window.addEventListener('orientationchange', closeMenuFunc);
 
