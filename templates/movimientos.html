@@ -11,6 +11,11 @@
 <body>
   <header>
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
+    <button class="hamburger-menu" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
     <nav>
       <ul>
         <li><a href="{{ url_for('index') }}">Inicio</a></li>
@@ -19,6 +24,7 @@
         <li><a href="{{ url_for('contactos') }}">Contactos</a></li>
       </ul>
     </nav>
+    <div class="overlay"></div>
   </header>
 
 <h1>Movimientos Registrados</h1>
