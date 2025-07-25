@@ -54,19 +54,22 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Inicializar Awesomplete para el campo de tipo de movimiento
-  awesompleteInicio = new Awesomplete(inputTipoMovimiento, {
-    list: [],
-    minChars: 0,
-    autoFirst: true,
-    maxItems: 999
-  });
+  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
+  if (inputTipoMovimiento) {
+    state.awesompleteInicio = new Awesomplete(inputTipoMovimiento, {
+      list: [],
+      minChars: 0,
+      autoFirst: true,
+      maxItems: 999
+    });
+  }
 
   // Actualizar opciones de Awesomplete
   function actualizarAwesompleteInicio(tipo) {
     let opciones = [];
     if (tipo === 'ingreso') opciones = opcionesIngreso;
     else if (tipo === 'egreso') opciones = opcionesEgreso;
-    if (awesompleteInicio) awesompleteInicio.list = opciones;
+    if (state.awesompleteInicio) state.awesompleteInicio.list = opciones;
   }
 
   // --- Definición de funciones ---
@@ -322,10 +325,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Al enfocar el input, muestra todas las opciones
-  inputTipoMovimiento.addEventListener("focus", function() {
-    this.value = "";
-    if (awesompleteInicio) awesompleteInicio.evaluate();
-  });
+  if (inputTipoMovimiento) {
+    inputTipoMovimiento.addEventListener("focus", function() {
+      this.value = "";
+      if (state.awesompleteInicio) state.awesompleteInicio.evaluate();
+    });
+  }
 
   btnAgregarEmpresa.addEventListener("click", () => {
     modoOpciones = "empresa";
