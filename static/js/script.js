@@ -7,10 +7,6 @@ console.warn = function() {
   originalConsoleWarn.apply(console, arguments);
 };
 
-// Funciones para el spinner
-const showSpinner = () => document.getElementById('spinner')?.classList.add('loading');
-const hideSpinner = () => document.getElementById('spinner')?.classList.remove('loading');
-
 // Variables globales para opciones
 let opcionesIngreso = [];
 let opcionesEgreso = [];
@@ -100,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return cache[cacheKey];
     }
 
-    showSpinner();
     try {
       const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
       const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
@@ -115,8 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error('Error al cargar datos:', error);
       return cache[cacheKey] || []; // Usar cache antiguo si hay error
-    } finally {
-      hideSpinner();
     }
   }
 
@@ -135,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function cargarEmpresas() {
     if (!elements.selectEmpresa) return;
-    showSpinner();
     const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
     fetch(`${baseUrl}/api/empresas`, {
       headers: {
@@ -167,15 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(error => {
         console.error('Error:', error);
         alert('Error al cargar empresas: ' + (error.message || 'Por favor, intenta de nuevo.'));
-      })
-      .finally(() => hideSpinner());
+      });
   }
 
   function cargarListaOpciones() {
     if (!elements.listaOpciones) return;
     elements.listaOpciones.innerHTML = "";
-    showSpinner();
-    
     const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
     
     if (state.modoOpciones === "empresa") {
@@ -198,8 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(error => {
           console.error('Error:', error);
           alert('Error al cargar empresas: ' + (error.message || 'Por favor, intenta de nuevo.'));
-        })
-        .finally(() => hideSpinner());
+        });
     } else if (state.modoOpciones === "tipo") {
       fetch(`${baseUrl}/api/tipos_movimiento?tipo=${state.tipoOpciones}`, {
         headers: {
@@ -220,8 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(error => {
           console.error('Error:', error);
           alert('Error al cargar tipos de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
-        })
-        .finally(() => hideSpinner());
+        });
     }
   }
 
@@ -267,13 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const nuevoValor = input.value.trim();
             if (!nuevoValor || nuevoValor === valorAntiguo) return cargarListaOpciones();
 
-            showSpinner();
             const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
             if (state.modoOpciones === "empresa") {
               // Nos aseguramos que tengamos el valor antiguo
               if (!valorAntiguo) {
                 alert('Error: No se pudo obtener el nombre de la empresa a editar');
-                hideSpinner();
                 return;
               }
 
@@ -301,12 +286,10 @@ document.addEventListener("DOMContentLoaded", () => {
               .catch(error => {
                 console.error('Error al actualizar empresa:', error);
                 alert('Error al actualizar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
-              })
-              .finally(() => hideSpinner());
+              });
             } else if (state.modoOpciones === "tipo") {
               if (!valorAntiguo || !state.tipoOpciones) {
                 alert('Error: No se pudo obtener el tipo de movimiento a editar');
-                hideSpinner();
                 return;
               }
 
@@ -333,8 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
               .catch(error => {
                 console.error('Error:', error);
                 alert('Error al actualizar tipo de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
-              })
-              .finally(() => hideSpinner());
+              });
             }
           }
           if (e.key === "Escape") {
@@ -364,7 +346,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `${baseUrl}/api/empresas/eliminar/${encodeURIComponent(valor)}` : 
             `${baseUrl}/api/tipos_movimiento/eliminar/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
           
-          showSpinner();
           fetch(url, { 
             method: 'DELETE',
             headers: {
@@ -394,8 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => {
               console.error('Error:', error);
               alert('Error al eliminar: ' + (error.message || 'Por favor, intenta de nuevo.'));
-            })
-            .finally(() => hideSpinner());
+            });
         });
       };
     });
@@ -511,7 +491,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
     
     if (state.modoOpciones === "empresa") {
-      showSpinner();
       fetch(`${baseUrl}/api/empresas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -535,12 +514,8 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(error => {
         console.error('Error:', error);
         alert('Error al agregar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
-      })
-      .finally(() => {
-        hideSpinner();
       });
     } else if (state.modoOpciones === "tipo") {
-      showSpinner();
       fetch(`${baseUrl}/api/tipos_movimiento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -564,9 +539,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(error => {
         console.error('Error:', error);
         alert('Error al agregar tipo de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
-      })
-      .finally(() => {
-        hideSpinner();
       });
     }
   });
@@ -706,7 +678,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Procesar movimientos únicos o múltiples
     if (!elements.activarMultiples?.checked || !elements.mesFinMultiple?.value) {
       // Movimiento único
-      showSpinner();
       crearMovimiento(fecha)
         .then(() => {
           elements.formulario?.reset();
@@ -758,7 +729,6 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .finally(() => {
           state.guardando = false;
-          hideSpinner();
         });
     }
   });
