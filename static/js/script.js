@@ -267,9 +267,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const nuevoValor = input.value.trim();
             if (!nuevoValor || nuevoValor === valorAntiguo) return cargarListaOpciones();
 
+            showSpinner();
             const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
             if (state.modoOpciones === "empresa") {
-              fetch(`${baseUrl}/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
+              // Nos aseguramos que tengamos el valor antiguo
+              if (!valorAntiguo) {
+                alert('Error: No se pudo obtener el nombre de la empresa a editar');
+                hideSpinner();
+                return;
+              }
+
+              // Construimos la URL correctamente
+              const url = `${baseUrl}/api/empresas/editar/${encodeURIComponent(valorAntiguo)}`;
+              console.log('Intentando actualizar empresa en:', url);
+
+              fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre: nuevoValor })
@@ -287,8 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 mostrarToast("✅ Empresa actualizada correctamente");
               })
               .catch(error => {
-                console.error('Error:', error);
+                console.error('Error al actualizar empresa:', error);
                 alert('Error al actualizar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
+              })
+              .finally(() => hideSpinner());
               });
             } else if (state.modoOpciones === "tipo") {
               fetch(`${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}?tipo=${state.tipoOpciones}`, {
@@ -338,8 +352,8 @@ document.addEventListener("DOMContentLoaded", () => {
           
           const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
           const url = state.modoOpciones === "empresa" ? 
-            `${baseUrl}/api/empresas/${encodeURIComponent(valor)}` : 
-            `${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
+            `${baseUrl}/api/empresas/eliminar/${encodeURIComponent(valor)}` : 
+            `${baseUrl}/api/tipos_movimiento/eliminar/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
           
           showSpinner();
           fetch(url, { 
