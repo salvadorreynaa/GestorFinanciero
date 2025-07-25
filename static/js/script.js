@@ -54,9 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Inicializar Awesomplete para el campo de tipo de movimiento
-  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  if (inputTipoMovimiento) {
-    state.awesompleteInicio = new Awesomplete(inputTipoMovimiento, {
+  if (elements.inputTipoMovimiento) {
+    state.awesompleteInicio = new Awesomplete(elements.inputTipoMovimiento, {
       list: [],
       minChars: 0,
       autoFirst: true,
@@ -319,10 +318,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Event Listeners ---
-  tipoSelect.addEventListener('change', function(e) {
-    actualizarOpcionesTipoMovimiento();
-    inputTipoMovimiento.value = '';
-  });
+  // Obtener referencias a elementos del DOM
+  const tipoSelect = elements.tipoSelect;
+  const inputTipoMovimiento = elements.inputTipoMovimiento;
+
+  // Agregar event listeners si los elementos existen
+  if (tipoSelect) {
+    tipoSelect.addEventListener('change', function(e) {
+      actualizarOpcionesTipoMovimiento();
+      if (inputTipoMovimiento) {
+        inputTipoMovimiento.value = '';
+      }
+    });
+  }
 
   // Al enfocar el input, muestra todas las opciones
   if (inputTipoMovimiento) {
@@ -332,28 +340,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  btnAgregarEmpresa.addEventListener("click", () => {
-    modoOpciones = "empresa";
-    tipoOpciones = "";
-    tituloOpciones.textContent = "Empresas";
-    inputNuevaOpcion.placeholder = "Nueva empresa...";
-    modalOpciones.style.display = "flex";
+  elements.btnAgregarEmpresa?.addEventListener("click", () => {
+    state.modoOpciones = "empresa";
+    state.tipoOpciones = "";
+    elements.tituloOpciones.textContent = "Empresas";
+    elements.inputNuevaOpcion.placeholder = "Nueva empresa...";
+    elements.modalOpciones.style.display = "flex";
     cargarListaOpciones();
   });
 
-  btnAgregarTipo.addEventListener("click", () => {
-    modoOpciones = "tipo";
-    tipoOpciones = tipoSelect.value || "ingreso";
-    tituloOpciones.textContent = `Tipos de Movimiento (${tipoOpciones})`;
-    inputNuevaOpcion.placeholder = "Nuevo tipo de movimiento...";
-    modalOpciones.style.display = "flex";
+  elements.btnAgregarTipo?.addEventListener("click", () => {
+    state.modoOpciones = "tipo";
+    state.tipoOpciones = elements.tipoSelect?.value || "ingreso";
+    elements.tituloOpciones.textContent = `Tipos de Movimiento (${state.tipoOpciones})`;
+    elements.inputNuevaOpcion.placeholder = "Nuevo tipo de movimiento...";
+    elements.modalOpciones.style.display = "flex";
     cargarListaOpciones();
   });
 
-  btnCerrarOpciones.addEventListener("click", () => {
-    modalOpciones.style.display = "none";
-    inputNuevaOpcion.value = "";
-    listaOpciones.innerHTML = "";
+  elements.btnCerrarOpciones?.addEventListener("click", () => {
+    elements.modalOpciones.style.display = "none";
+    elements.inputNuevaOpcion.value = "";
+    elements.listaOpciones.innerHTML = "";
   });
 
   btnGuardarOpcion.addEventListener("click", () => {
