@@ -155,6 +155,8 @@ async function cargarMovimientos() {
       const numB = (parseInt(añoB) || 0) * 100 + (meses.indexOf(mesB) + 1);
       return numB - numA;
     });  let hayMovimientos = false;
+  let loadingGrupo = false;
+
   clavesOrdenadas.forEach(clave => {
     const movimientosMes = grupos[clave];
     if (movimientosMes.length > 0) hayMovimientos = true;
@@ -164,29 +166,49 @@ async function cargarMovimientos() {
     if (todosCompletos && !hayPendientes) {
       // Fila resumen personalizada
       const filaResumen = document.createElement("tr");
-      filaResumen.className = "fila-resumen-mes" + (window.estadoExpandidoMes[clave] ? " abierta" : "");
+      filaResumen.className = `fila-resumen-mes grupo-loading${window.estadoExpandidoMes[clave] ? " abierta" : ""}`;
       const [mes, año] = clave.split("-").map(s => s ? s.trim() : '');
       let textoResumen = mes;
       if (año) textoResumen += ` - ${año}`;
       
       filaResumen.innerHTML = `
-        <td colspan="10" style="text-align:center;">
+        <td colspan="10" style="text-align:center;position:relative;">
           <span class="resumen-mes-texto">
             ${textoResumen}
           </span>
         </td>
       `;
-      filaResumen.addEventListener("click", () => {
+      filaResumen.addEventListener("click", async () => {
+        if (loadingGrupo) return; // Prevenir clics múltiples
+        loadingGrupo = true;
+        filaResumen.classList.add('loading');
+        
+        // Añadir delay mínimo para la animación
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         window.estadoExpandidoMes[clave] = !window.estadoExpandidoMes[clave];
-        cargarMovimientos();
+        
+        const contenedorMovimientos = document.createElement('div');
+        contenedorMovimientos.className = 'grupo-mes';
+        
+        if (window.estadoExpandidoMes[clave]) {
+          tbody.insertBefore(contenedorMovimientos, filaResumen.nextSibling);
+          // Renderizar movimientos con animación
+          setTimeout(() => {
+            movimientosMes.forEach((mov, index) => {
+              const tr = document.createElement('tr');
+              tr.style.animationDelay = `${index * 50}ms`;
+              agregarFilaMovimiento(mov, contenedorMovimientos);
+            });
+            contenedorMovimientos.classList.add('expanded');
+          }, 50);
+        }
+        
+        filaResumen.classList.remove('loading');
+        loadingGrupo = false;
       });
       tbody.appendChild(filaResumen);
-      // Si expandido, mostrar movimientos
-      if (window.estadoExpandidoMes[clave]) {
-        movimientosMes.forEach(mov => {
-          agregarFilaMovimiento(mov, tbody);
-        });
-      }
+      
     } else {
       // Mostrar todos los movimientos normalmente
       movimientosMes.forEach(mov => {
@@ -255,28 +277,64 @@ function agregarFilaMovimiento(mov, tbody) {
 
 // Cambiar estado de movimiento
 async function cambiarEstadoMovimiento(id, btn) {
-  // Alterna estado según tipo: egreso (Pendiente→Pagado), ingreso (Pendiente→Cobrado)
-  // Busca el tipo del movimiento
-  const res = await fetch('/api/movimientos');
-  const movimientos = await res.json();
-  const mov = movimientos.find(m => m.id == id);
-  if (!mov) return;
-  let actual = btn.textContent.trim();
+  // Prevenir múltiples clics
+  if (btn.classList.contains('updating')) return;
+  
+  const tipo = btn.closest('tr').querySelector('td:nth-child(3)').textContent.toLowerCase();
+  const actual = btn.textContent.trim();
   let nuevoEstado = "Pendiente";
-  if (mov.tipo.toLowerCase() === "egreso") {
+  
+  // Determinar nuevo estado basado en el tipo
+  if (tipo === "egreso") {
     nuevoEstado = actual === "Pendiente" ? "Pagado" : "Pendiente";
   } else {
     nuevoEstado = actual === "Pendiente" ? "Cobrado" : "Pendiente";
   }
-  btn.textContent = nuevoEstado;
-  btn.classList.toggle("verde", nuevoEstado === "Pagado" || nuevoEstado === "Cobrado");
-  // Actualiza en backend
-  await fetch(`/api/movimientos/${id}/estado`, {
-    method: "PATCH",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({estado: nuevoEstado})
-  });
-  await cargarMovimientos();
+
+  // Añadir clase para animación
+  btn.classList.add('estado-transition', 'updating');
+  
+  try {
+    const response = await fetch(`/api/movimientos/${id}/estado`, {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({estado: nuevoEstado})
+    });
+
+    if (!response.ok) throw new Error('Error al actualizar estado');
+
+    // Actualizar UI con animación
+    setTimeout(() => {
+      btn.textContent = nuevoEstado;
+      btn.classList.toggle("verde", nuevoEstado === "Pagado" || nuevoEstado === "Cobrado");
+      
+      // Verificar si necesitamos actualizar el grupo
+      const row = btn.closest('tr');
+      const grupo = row.closest('.grupo-mes');
+      if (grupo) {
+        const estadosGrupo = Array.from(grupo.querySelectorAll('.boton-estado'))
+          .map(b => b.textContent.trim());
+        
+        const todosCompletos = estadosGrupo.every(estado => 
+          estado === "Pagado" || estado === "Cobrado"
+        );
+        
+        if (todosCompletos) {
+          // Recargar solo si el grupo está completo
+          cargarMovimientos();
+        }
+      }
+    }, 300);
+
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error al actualizar el estado');
+  } finally {
+    // Remover clase de animación
+    setTimeout(() => {
+      btn.classList.remove('estado-transition', 'updating');
+    }, 300);
+  }
 }
 
 async function cargarOpcionesFiltroTipoMovimiento() {

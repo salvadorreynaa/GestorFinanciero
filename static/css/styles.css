@@ -28,6 +28,8 @@ header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
   width: 100%;
   border-bottom: 5px solid #ddd;
+  will-change: transform; /* Optimización para rendimiento */
+  transform: translateZ(0); /* Fuerza aceleración por hardware */
 }
 
 header img {
@@ -35,6 +37,7 @@ header img {
   width: auto;
   margin-right: 200px;
   margin-left: 100px;
+  will-change: transform; /* Optimización para rendimiento */
 }
 
 nav {

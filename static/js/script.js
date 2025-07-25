@@ -1,31 +1,57 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
+// Funciones para el spinner
+const showSpinner = () => document.getElementById('spinner').classList.add('loading');
+const hideSpinner = () => document.getElementById('spinner').classList.remove('loading');
+
+// Cache para datos
+const cache = {
+  empresas: [],
+  tiposMovimiento: {
+    ingreso: [],
+    egreso: []
+  },
+  ultimaActualizacion: {
+    empresas: 0,
+    tiposMovimiento: 0
+  }
+};
+
+// Tiempo de caducidad del cache en milisegundos (5 minutos)
+const CACHE_EXPIRY = 5 * 60 * 1000;
+
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Referencias al DOM ---
-  const formulario = document.getElementById("formulario");
-  const tipoSelect = document.getElementById("tipo");
-  const inputTipoMovimiento = document.getElementById("tiposmovimientos");
-  const selectEmpresa = document.getElementById("empresa");
-  const activarMultiples = document.getElementById("activar-multiples");
-  const opcionesMultiples = document.getElementById("opciones-multiples");
-  const recordatorioInicio = document.getElementById("recordatorio-inicio");
-  const mesFinMultiple = document.getElementById("mes-fin-multiple");
-  const explicacionMultiples = document.getElementById("explicacion-multiples");
-  const inputFecha = document.getElementById("fecha");
-  const modalOpciones = document.getElementById("modal-opciones");
-  modalOpciones?.style?.setProperty('z-index', '1000');  // Aseguramos que tenga un z-index menor
-  const tituloOpciones = document.getElementById("modal-opciones-titulo");
-  const inputNuevaOpcion = document.getElementById("input-nueva-opcion");
-  const btnGuardarOpcion = document.getElementById("btn-guardar-opcion");
-  const listaOpciones = document.getElementById("lista-opciones");
-  const btnCerrarOpciones = document.getElementById("btn-cerrar-opciones");
-  const btnAgregarEmpresa = document.getElementById("btn-agregar-empresa");
-  const btnAgregarTipo = document.getElementById("btn-agregar-tipo");
+  // --- Referencias al DOM usando un objeto para mejor organización ---
+  const elements = {
+    formulario: document.getElementById("formulario"),
+    tipoSelect: document.getElementById("tipo"),
+    inputTipoMovimiento: document.getElementById("tiposmovimientos"),
+    selectEmpresa: document.getElementById("empresa"),
+    activarMultiples: document.getElementById("activar-multiples"),
+    opcionesMultiples: document.getElementById("opciones-multiples"),
+    recordatorioInicio: document.getElementById("recordatorio-inicio"),
+    mesFinMultiple: document.getElementById("mes-fin-multiple"),
+    explicacionMultiples: document.getElementById("explicacion-multiples"),
+    inputFecha: document.getElementById("fecha"),
+    modalOpciones: document.getElementById("modal-opciones"),
+    tituloOpciones: document.getElementById("modal-opciones-titulo"),
+    inputNuevaOpcion: document.getElementById("input-nueva-opcion"),
+    btnGuardarOpcion: document.getElementById("btn-guardar-opcion"),
+    listaOpciones: document.getElementById("lista-opciones"),
+    btnCerrarOpciones: document.getElementById("btn-cerrar-opciones"),
+    btnAgregarEmpresa: document.getElementById("btn-agregar-empresa"),
+    btnAgregarTipo: document.getElementById("btn-agregar-tipo")
+  };
+
+  // Configuración de z-index para modal
+  elements.modalOpciones?.style?.setProperty('z-index', '1000');
 
   // --- Variables de estado ---
-  let modoOpciones = "";
-  let tipoOpciones = "";
-  let guardando = false;
-  let awesompleteInicio;
+  const state = {
+    modoOpciones: "",
+    tipoOpciones: "",
+    guardando: false,
+    awesompleteInicio: null
+  };
 
   // Inicializar Awesomplete para el campo de tipo de movimiento
   awesompleteInicio = new Awesomplete(inputTipoMovimiento, {
@@ -44,21 +70,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Definición de funciones ---
-  function actualizarOpcionesTipoMovimiento() {
-    const tipo = tipoSelect.value;
-    fetch(`/api/tipos_movimiento?tipo=${tipo}`)
-      .then(res => res.json())
-      .then(tipos => {
-        if (tipo === 'ingreso') {
-          opcionesIngreso = tipos.map(t => t.nombre);
-        } else if (tipo === 'egreso') {
-          opcionesEgreso = tipos.map(t => t.nombre);
-        }
-        actualizarAwesompleteInicio(tipo);
-      });
+  // Función para verificar si el cache está vigente
+  function isCacheValid(key) {
+    const now = Date.now();
+    return (now - cache.ultimaActualizacion[key]) < CACHE_EXPIRY;
+  }
+
+  // Función para cargar datos con cache
+  async function fetchConCache(url, cacheKey) {
+    if (cache[cacheKey] && isCacheValid(cacheKey)) {
+      return cache[cacheKey];
+    }
+
+    showSpinner();
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      cache[cacheKey] = data;
+      cache.ultimaActualizacion[cacheKey] = Date.now();
+      return data;
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      return cache[cacheKey] || []; // Usar cache antiguo si hay error
+    } finally {
+      hideSpinner();
+    }
+  }
+
+  // Función optimizada para actualizar opciones
+  async function actualizarOpcionesTipoMovimiento() {
+    const tipo = elements.tipoSelect.value;
+    const tipos = await fetchConCache(`/api/tipos_movimiento?tipo=${tipo}`, 'tiposMovimiento');
+    
+    if (tipo === 'ingreso') {
+      opcionesIngreso = tipos.map(t => t.nombre);
+    } else if (tipo === 'egreso') {
+      opcionesEgreso = tipos.map(t => t.nombre);
+    }
+    actualizarAwesompleteInicio(tipo);
   }
 
   function cargarEmpresas() {
+    showSpinner();
     fetch('/api/empresas')
       .then(res => res.json())
       .then(empresas => {
@@ -75,25 +128,29 @@ document.addEventListener("DOMContentLoaded", () => {
           option.textContent = empresa.nombre;
           selectEmpresa.appendChild(option);
         });
-      });
+      })
+      .finally(() => hideSpinner());
   }
 
   function cargarListaOpciones() {
     listaOpciones.innerHTML = "";
+    showSpinner();
     if (modoOpciones === "empresa") {
       fetch('/api/empresas')
         .then(res => res.json())
         .then(empresas => {
           empresas.forEach(empresa => agregarElementoLista(empresa.nombre));
           agregarEventosOpciones();
-        });
+        })
+        .finally(() => hideSpinner());
     } else if (modoOpciones === "tipo") {
       fetch(`/api/tipos_movimiento?tipo=${tipoOpciones}`)
         .then(res => res.json())
         .then(tipos => {
           tipos.forEach(tipo => agregarElementoLista(tipo.nombre));
           agregarEventosOpciones();
-        });
+        })
+        .finally(() => hideSpinner());
     }
   }
 
