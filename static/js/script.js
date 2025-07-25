@@ -1,4 +1,12 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
+
+// Ignorar advertencias de React Router (no afectan la funcionalidad)
+const originalConsoleWarn = console.warn;
+console.warn = function() {
+  if (arguments[0]?.includes?.('React Router')) return;
+  originalConsoleWarn.apply(console, arguments);
+};
+
 // Funciones para el spinner
 const showSpinner = () => document.getElementById('spinner').classList.add('loading');
 const hideSpinner = () => document.getElementById('spinner').classList.remove('loading');
@@ -135,9 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cargarListaOpciones() {
-    listaOpciones.innerHTML = "";
+    if (!elements.listaOpciones) return;
+    elements.listaOpciones.innerHTML = "";
     showSpinner();
-    if (modoOpciones === "empresa") {
+    if (state.modoOpciones === "empresa") {
       fetch('/api/empresas')
         .then(res => res.json())
         .then(empresas => {
@@ -157,6 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function agregarElementoLista(valor) {
+    if (!elements.listaOpciones) return;
     const li = document.createElement("li");
     li.style.display = "flex";
     li.style.alignItems = "center";
@@ -169,11 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="btn-eliminar-opcion" title="Eliminar" data-valor="${valor}">&#128465;</button>
       </span>
     `;
-    listaOpciones.appendChild(li);
+    elements.listaOpciones.appendChild(li);
   }
 
   function agregarEventosOpciones() {
-    listaOpciones.querySelectorAll(".btn-editar-opcion").forEach(btn => {
+    if (!elements.listaOpciones) return;
+    elements.listaOpciones.querySelectorAll(".btn-editar-opcion").forEach(btn => {
       btn.onclick = function () {
         const li = btn.closest("li");
         const valorAntiguo = btn.dataset.valor;
@@ -364,10 +375,11 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.listaOpciones.innerHTML = "";
   });
 
-  btnGuardarOpcion.addEventListener("click", () => {
-    const valor = inputNuevaOpcion.value.trim();
+  elements.btnGuardarOpcion?.addEventListener("click", () => {
+    const valor = elements.inputNuevaOpcion?.value.trim();
     if (!valor) return;
-    if (modoOpciones === "empresa") {
+    if (state.modoOpciones === "empresa") {
+      showSpinner();
       fetch('/api/empresas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -375,17 +387,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }).then(() => {
         cargarEmpresas();
         cargarListaOpciones();
-        inputNuevaOpcion.value = "";
+        if (elements.inputNuevaOpcion) {
+          elements.inputNuevaOpcion.value = "";
+        }
+      }).finally(() => {
+        hideSpinner();
       });
-    } else if (modoOpciones === "tipo") {
+    } else if (state.modoOpciones === "tipo") {
+      showSpinner();
       fetch('/api/tipos_movimiento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: valor, tipo: tipoOpciones })
+        body: JSON.stringify({ nombre: valor, tipo: state.tipoOpciones })
       }).then(() => {
         cargarListaOpciones();
         actualizarOpcionesTipoMovimiento();
-        inputNuevaOpcion.value = "";
+        if (elements.inputNuevaOpcion) {
+          elements.inputNuevaOpcion.value = "";
+        }
+      }).finally(() => {
+        hideSpinner();
       });
     }
   });
