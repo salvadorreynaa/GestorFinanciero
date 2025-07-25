@@ -267,23 +267,50 @@ document.addEventListener("DOMContentLoaded", () => {
             const nuevoValor = input.value.trim();
             if (!nuevoValor || nuevoValor === valorAntiguo) return cargarListaOpciones();
 
-            if (modoOpciones === "empresa") {
-              fetch(`/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
+            const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+            if (state.modoOpciones === "empresa") {
+              fetch(`${baseUrl}/api/empresas/${encodeURIComponent(valorAntiguo)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre: nuevoValor })
-              }).then(() => {
+              })
+              .then(async res => {
+                if (!res.ok) {
+                  const text = await res.text();
+                  throw new Error(`Error ${res.status}: ${text}`);
+                }
+                return res.json();
+              })
+              .then(() => {
                 cargarListaOpciones();
                 cargarEmpresas();
+                mostrarToast("✅ Empresa actualizada correctamente");
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
               });
-            } else if (modoOpciones === "tipo") {
-              fetch(`/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}?tipo=${tipoOpciones}`, {
+            } else if (state.modoOpciones === "tipo") {
+              fetch(`${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}?tipo=${state.tipoOpciones}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre: nuevoValor })
-              }).then(() => {
+              })
+              .then(async res => {
+                if (!res.ok) {
+                  const text = await res.text();
+                  throw new Error(`Error ${res.status}: ${text}`);
+                }
+                return res.json();
+              })
+              .then(() => {
                 cargarListaOpciones();
                 actualizarOpcionesTipoMovimiento();
+                mostrarToast("✅ Tipo de movimiento actualizado correctamente");
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar tipo de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
               });
             }
           }
