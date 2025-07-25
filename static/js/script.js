@@ -102,7 +102,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     showSpinner();
     try {
-      const response = await fetch(url);
+      const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       cache[cacheKey] = data;
       cache.ultimaActualizacion[cacheKey] = Date.now();
@@ -131,8 +136,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function cargarEmpresas() {
     if (!elements.selectEmpresa) return;
     showSpinner();
-    fetch('/api/empresas')
-      .then(res => res.json())
+    const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+    fetch(`${baseUrl}/api/empresas`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Error ${res.status}: ${text}`);
+        }
+        return res.json();
+      })
       .then(empresas => {
         elements.selectEmpresa.innerHTML = '';
         const defaultOption = document.createElement('option');
@@ -148,6 +164,10 @@ document.addEventListener("DOMContentLoaded", () => {
           elements.selectEmpresa.appendChild(option);
         });
       })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cargar empresas: ' + (error.message || 'Por favor, intenta de nuevo.'));
+      })
       .finally(() => hideSpinner());
   }
 
@@ -155,20 +175,51 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.listaOpciones) return;
     elements.listaOpciones.innerHTML = "";
     showSpinner();
+    
+    const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+    
     if (state.modoOpciones === "empresa") {
-      fetch('/api/empresas')
-        .then(res => res.json())
+      fetch(`${baseUrl}/api/empresas`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(async res => {
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Error ${res.status}: ${text}`);
+          }
+          return res.json();
+        })
         .then(empresas => {
           empresas.forEach(empresa => agregarElementoLista(empresa.nombre));
           agregarEventosOpciones();
         })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al cargar empresas: ' + (error.message || 'Por favor, intenta de nuevo.'));
+        })
         .finally(() => hideSpinner());
     } else if (state.modoOpciones === "tipo") {
-      fetch(`/api/tipos_movimiento?tipo=${state.tipoOpciones}`)
-        .then(res => res.json())
+      fetch(`${baseUrl}/api/tipos_movimiento?tipo=${state.tipoOpciones}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(async res => {
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Error ${res.status}: ${text}`);
+          }
+          return res.json();
+        })
         .then(tipos => {
           tipos.forEach(tipo => agregarElementoLista(tipo.nombre));
           agregarEventosOpciones();
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al cargar tipos de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
         })
         .finally(() => hideSpinner());
     }
@@ -250,32 +301,51 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.listaOpciones?.querySelectorAll(".btn-eliminar-opcion").forEach(btn => {
       btn.onclick = function () {
         const valor = btn.dataset.valor;
+        if (!valor) {
+          alert('Error: No se pudo obtener el valor a eliminar');
+          return;
+        }
+
         mostrarConfirmacionEliminar(`¿Seguro que deseas eliminar "${valor}"?`).then(confirmado => {
           if (!confirmado) return;
           
+          const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
           const url = state.modoOpciones === "empresa" ? 
-            `/api/empresas/${encodeURIComponent(valor)}` : 
-            `/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
+            `${baseUrl}/api/empresas/${encodeURIComponent(valor)}` : 
+            `${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
           
-          fetch(url, { method: 'DELETE' })
+          showSpinner();
+          fetch(url, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
             .then(async res => {
-              const text = await res.text();
-              try {
-                const data = JSON.parse(text);
-                if (!data.status || data.status === 'error') {
-                  throw new Error(data.error || 'Error al eliminar');
-                }
-                if (state.modoOpciones === "empresa") cargarEmpresas();
-                cargarListaOpciones();
-                if (state.modoOpciones === "tipo") actualizarOpcionesTipoMovimiento();
-              } catch (e) {
-                throw new Error('Error al eliminar: ' + text);
+              if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Error ${res.status}: ${text}`);
               }
+              return res.json();
+            })
+            .then(data => {
+              if (data.status === 'error') {
+                throw new Error(data.error || 'Error al eliminar');
+              }
+              if (state.modoOpciones === "empresa") {
+                cargarEmpresas();
+                mostrarToast("✅ Empresa eliminada correctamente");
+              } else {
+                actualizarOpcionesTipoMovimiento();
+                mostrarToast("✅ Tipo de movimiento eliminado correctamente");
+              }
+              cargarListaOpciones();
             })
             .catch(error => {
               console.error('Error:', error);
-              alert(error.message || 'Error al eliminar. Por favor, intenta de nuevo.');
-            });
+              alert('Error al eliminar: ' + (error.message || 'Por favor, intenta de nuevo.'));
+            })
+            .finally(() => hideSpinner());
         });
       };
     });
@@ -387,34 +457,65 @@ document.addEventListener("DOMContentLoaded", () => {
   elements.btnGuardarOpcion?.addEventListener("click", () => {
     const valor = elements.inputNuevaOpcion?.value.trim();
     if (!valor) return;
+
+    const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+    
     if (state.modoOpciones === "empresa") {
       showSpinner();
-      fetch('/api/empresas', {
+      fetch(`${baseUrl}/api/empresas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: valor })
-      }).then(() => {
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Error ${res.status}: ${text}`);
+        }
+        return res.json();
+      })
+      .then(() => {
         cargarEmpresas();
         cargarListaOpciones();
         if (elements.inputNuevaOpcion) {
           elements.inputNuevaOpcion.value = "";
         }
-      }).finally(() => {
+        mostrarToast("✅ Empresa agregada correctamente");
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar empresa: ' + (error.message || 'Por favor, intenta de nuevo.'));
+      })
+      .finally(() => {
         hideSpinner();
       });
     } else if (state.modoOpciones === "tipo") {
       showSpinner();
-      fetch('/api/tipos_movimiento', {
+      fetch(`${baseUrl}/api/tipos_movimiento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: valor, tipo: state.tipoOpciones })
-      }).then(() => {
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Error ${res.status}: ${text}`);
+        }
+        return res.json();
+      })
+      .then(() => {
         cargarListaOpciones();
         actualizarOpcionesTipoMovimiento();
         if (elements.inputNuevaOpcion) {
           elements.inputNuevaOpcion.value = "";
         }
-      }).finally(() => {
+        mostrarToast("✅ Tipo de movimiento agregado correctamente");
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar tipo de movimiento: ' + (error.message || 'Por favor, intenta de nuevo.'));
+      })
+      .finally(() => {
         hideSpinner();
       });
     }
@@ -519,8 +620,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const monto = parseFloat(elements.monto?.value);
     const empresa = elements.selectEmpresa?.value;
 
-    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) return;
-    guardando = true;
+    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) {
+      alert('Por favor, complete todos los campos requeridos correctamente.');
+      return;
+    }
+    state.guardando = true;
 
     // Función para crear un movimiento para una fecha específica
 
@@ -541,7 +645,8 @@ document.addEventListener("DOMContentLoaded", () => {
         estado: "Pendiente"
       };
 
-      return fetch('/api/movimientos', {
+      const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+      return fetch(`${baseUrl}/api/movimientos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nuevoMovimiento)
@@ -565,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Movimientos múltiples
       const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
-      const [anioFin, mesFin] = mesFinMultiple.value.split('-');
+      const [anioFin, mesFin] = elements.mesFinMultiple.value.split('-');
       
       const movimientos = [];
       let mesActual = parseInt(mesInicio) - 1;  // 0-based
@@ -594,14 +699,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       Promise.all(movimientos)
         .then(() => {
-          formulario.reset();
+          elements.formulario?.reset();
           mostrarToast(`✅ ${movimientos.length} movimientos guardados correctamente.`);
         })
         .catch(error => {
           console.error('Error:', error);
           alert('Ocurrió un error al guardar algunos movimientos. Por favor, verifica en la sección de movimientos.');
         })
-        .finally(() => guardando = false);
+        .finally(() => {
+          state.guardando = false;
+          hideSpinner();
+        });
     }
   });
 
