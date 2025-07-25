@@ -26,11 +26,8 @@ header {
   background-color: #ffffff;
   height: 90px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  position: fixed;
-  top: 0;
   width: 100%;
   border-bottom: 5px solid #ddd;
-  z-index: 3000;
 }
 
 header img {
@@ -130,25 +127,28 @@ body {
   padding: 0;
   background: #f7f7f7;
   font-size: 14px;
-  padding-top: 60px; /* igual a la altura del header */
 }
 
 /* Media queries para diseño responsive */
 @media (max-width: 768px) {
   .hamburger-menu {
     display: block;
+    margin-left: auto;
   }
 
   nav {
-    position: fixed;
-    top: 0;
-    right: -280px;
+    display: none;
+    position: absolute;
+    top: 90px;
+    right: 0;
     width: 280px;
-    height: 100vh;
     background: white;
-    z-index: 3001;
-    transition: right 0.3s ease;
+    z-index: 1000;
     box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+  }
+
+  nav.active {
+    display: block;
   }
 
   nav.active {
