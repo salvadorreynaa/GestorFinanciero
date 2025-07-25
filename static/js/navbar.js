@@ -1,27 +1,24 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const menuToggle = document.getElementById('menu-toggle');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const closeMenu = document.getElementById('close-menu');
-    const menuOverlay = document.getElementById('menu-overlay');
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    const nav = document.querySelector('nav');
+    const overlay = document.querySelector('.overlay');
 
-    // Función para abrir el menú
-    function openMenu() {
-        mobileMenu.classList.add('active');
-        menuOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevenir scroll
-    }
-
-    // Función para cerrar el menú
-    function closeMenuFunc() {
-        mobileMenu.classList.remove('active');
-        menuOverlay.classList.remove('active');
-        document.body.style.overflow = ''; // Restaurar scroll
+    // Función para alternar el menú
+    function toggleMenu() {
+        hamburgerMenu.classList.toggle('active');
+        nav.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
     }
 
     // Event listeners
-    menuToggle.addEventListener('click', openMenu);
-    closeMenu.addEventListener('click', closeMenuFunc);
-    menuOverlay.addEventListener('click', closeMenuFunc);
+    if (hamburgerMenu) {
+        hamburgerMenu.addEventListener('click', toggleMenu);
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', toggleMenu);
+    }
 
     // Cerrar menú al cambiar orientación del dispositivo
     window.addEventListener('orientationchange', closeMenuFunc);
