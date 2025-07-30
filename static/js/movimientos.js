@@ -172,10 +172,11 @@ async function cargarMovimientos() {
       if (año) textoResumen += ` - ${año}`;
       
       filaResumen.innerHTML = `
-        <td colspan="10" style="text-align:center;position:relative;">
-          <span class="resumen-mes-texto">
+        <td colspan="10" style="text-align:center;position:relative;padding:10px;cursor:pointer;background-color:#f8f9fa;">
+          <span class="resumen-mes-texto" style="font-weight:500;">
             ${textoResumen}
           </span>
+          <span style="margin-left:10px;color:#666;font-size:0.9em;">(Click para expandir)</span>
         </td>
       `;
       filaResumen.addEventListener("click", async () => {
@@ -202,8 +203,26 @@ async function cargarMovimientos() {
           
           // Renderizar movimientos con animación
           setTimeout(() => {
+            // Crear la estructura completa de la tabla
             const tabla = document.createElement('table');
             tabla.className = 'tabla-movimientos';
+            tabla.innerHTML = `
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Empresa</th>
+                  <th>Tipo</th>
+                  <th>T. Movimiento</th>
+                  <th>Descripcion</th>
+                  <th>Mes</th>
+                  <th>Año</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            `;
             contenedorMovimientos.appendChild(tabla);
             
             movimientosMes.forEach((mov, index) => {
@@ -254,9 +273,18 @@ async function cargarMovimientos() {
                   </div>
                 </td>
               `;
-              tabla.appendChild(tr);
+              tabla.querySelector('tbody').appendChild(tr);
             });
             contenedorMovimientos.classList.add('expanded');
+            
+            // Ajustar estilos para que coincidan con la tabla principal
+            tabla.style.width = '100%';
+            tabla.style.borderCollapse = 'collapse';
+            tabla.querySelectorAll('th, td').forEach(cell => {
+              cell.style.padding = '8px';
+              cell.style.textAlign = 'left';
+              cell.style.borderBottom = '1px solid #eee';
+            });
           }, 50);
         }
         
