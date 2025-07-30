@@ -329,6 +329,9 @@ document.addEventListener("DOMContentLoaded", () => {
               .then(() => {
                 cargarListaOpciones();
                 actualizarOpcionesTipoMovimiento();
+                if (window.cargarMovimientos) {
+                  cargarMovimientos();
+                }
                 mostrarToast("✅ Tipo de movimiento actualizado correctamente");
               })
               .catch(error => {

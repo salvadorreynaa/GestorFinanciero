@@ -658,13 +658,44 @@ def api_empresas_rename(nombre):
 def api_tipos_movimiento_rename(nombre):
     data = request.get_json()
     nuevo_nombre = data.get('nombre')
+    if not nuevo_nombre:
+        return jsonify({'status': 'error', 'error': 'Nombre no proporcionado'}), 400
+        
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('UPDATE tipos_movimiento SET nombre=%s WHERE nombre=%s;', (nuevo_nombre, nombre))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'status': 'ok'})
+    try:
+        # Primero actualizamos los movimientos que usan este tipo
+        cur.execute('UPDATE movimientos SET tipoMovimiento = %s WHERE tipoMovimiento = %s;', 
+                   (nuevo_nombre, nombre))
+        
+        # Luego actualizamos el tipo de movimiento
+        cur.execute('UPDATE tipos_movimiento SET nombre = %s WHERE nombre = %s RETURNING id;', 
+                   (nuevo_nombre, nombre))
+        updated = cur.fetchone()
+        
+        if not updated:
+            cur.close()
+            conn.close()
+            return jsonify({
+                'status': 'error',
+                'error': 'Tipo de movimiento no encontrado'
+            }), 404
+            
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok', 'message': 'Tipo de movimiento actualizado correctamente'})
+        
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            if 'cur' in locals() and cur:
+                cur.close()
+            conn.close()
+        return jsonify({
+            'status': 'error',
+            'error': 'Error al actualizar el tipo de movimiento: ' + str(e)
+        }), 500
 
 @app.route('/api/movimientos/<int:id>', methods=['PATCH'])
 def api_movimientos_patch(id):
