@@ -198,7 +198,50 @@ async function cargarMovimientos() {
             movimientosMes.forEach((mov, index) => {
               const tr = document.createElement('tr');
               tr.style.animationDelay = `${index * 50}ms`;
-              agregarFilaMovimiento(mov, contenedorMovimientos);
+              const monto = parseFloat(mov.monto);
+              let fechaFormateada = "";
+              let mes = mov.mes || "";
+              let año = mov.año || "";
+              if (mov.fecha) {
+                let soloFecha = mov.fecha.split("T")[0];
+                if (soloFecha.includes("-")) {
+                  const [añoF, mesF, diaF] = soloFecha.split("-");
+                  fechaFormateada = `${diaF}/${mesF}/${añoF}`;
+                  if (!mes) {
+                    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+                    mes = mesesNombres[parseInt(mesF,10)-1];
+                  }
+                  if (!año) año = añoF;
+                } else {
+                  fechaFormateada = mov.fecha;
+                }
+              }
+              tr.innerHTML = `
+                <td>${fechaFormateada}</td>
+                <td>${mov.empresa || ""}</td>
+                <td>${mov.tipo}</td>
+                <td>${mov.tipoMovimiento || ""}</td>
+                <td>${mov.descripcion}</td>
+                <td>${mes}</td>
+                <td>${año}</td>
+                <td>${monto.toFixed(2)}</td>
+                <td>
+                  <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstadoMovimiento('${mov.id}', this)">${mov.estado}</button>
+                </td>
+                <td style="display:flex;gap:6px;align-items:center;">
+                  <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
+                    </svg>
+                  </button>
+                  <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
+                    </svg>
+                  </button>
+                </td>
+              `;
+              contenedorMovimientos.appendChild(tr);
             });
             contenedorMovimientos.classList.add('expanded');
           }, 50);

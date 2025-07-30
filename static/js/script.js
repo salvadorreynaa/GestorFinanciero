@@ -688,7 +688,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(console.error)
         .finally(() => {
           state.guardando = false;
-          hideSpinner();
         });
     } else {
       // Movimientos múltiples
