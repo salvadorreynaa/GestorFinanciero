@@ -11,6 +11,20 @@ console.warn = function() {
 let opcionesIngreso = [];
 let opcionesEgreso = [];
 
+// Funciones auxiliares globales
+function obtenerUltimoDiaMes(anio, mes) {
+  return new Date(anio, mes + 1, 0).getDate();
+}
+
+function ajustarFecha(anio, mes, dia) {
+  const ultimoDia = obtenerUltimoDiaMes(anio, mes);
+  return dia > ultimoDia ? ultimoDia : dia;
+}
+
+function formatearFecha(fecha) {
+  return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+}
+
 // Cache para datos
 const cache = {
   empresas: [],
@@ -557,22 +571,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const [anioI, mesI, diaI] = fechaInicioStr.split('-');
     const diaOriginal = parseInt(diaI);
     
-    // Función para obtener el último día del mes
-    const obtenerUltimoDiaMes = (anio, mes) => {
-      return new Date(anio, mes + 1, 0).getDate();
-    };
-
-    // Función para ajustar la fecha al último día si es necesario
-    const ajustarFecha = (anio, mes, dia) => {
-      const ultimoDia = obtenerUltimoDiaMes(anio, mes);
-      return dia > ultimoDia ? ultimoDia : dia;
-    };
-
-    // Formateamos la fecha manualmente
-    const formatearFecha = (fecha) => {
-      return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
-    };
-
     // Ajustamos la fecha de inicio si es necesario
     const mesInicio = parseInt(mesI) - 1;
     const diaAjustadoInicio = ajustarFecha(parseInt(anioI), mesInicio, diaOriginal);
