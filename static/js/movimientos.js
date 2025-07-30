@@ -187,13 +187,18 @@ async function cargarMovimientos() {
       filaResumen.addEventListener("click", () => {
         window.estadoExpandidoMes[clave] = !window.estadoExpandidoMes[clave];
         
-        const movimientosParaEliminar = Array.from(tbody.querySelectorAll('.movimiento-detalle'));
+        // Encontrar y eliminar los movimientos actuales de este mes
+        const movimientosParaEliminar = Array.from(tbody.querySelectorAll(`.movimiento-detalle[data-mes="${clave}"]`));
         movimientosParaEliminar.forEach(fila => fila.remove());
         
         if (window.estadoExpandidoMes[clave]) {
           const movimientosOrdenados = [...movimientosMes].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
           movimientosOrdenados.forEach(mov => {
-            agregarFilaMovimiento(mov, tbody);
+            const fila = document.createElement('tr');
+            fila.className = 'movimiento-detalle';
+            fila.setAttribute('data-mes', clave);
+            fila.innerHTML = generarHTMLMovimiento(mov);
+            filaResumen.insertAdjacentElement('afterend', fila);
           });
         }
       });
@@ -214,14 +219,13 @@ async function cargarMovimientos() {
   }
 }
 
-// Función para agregar una fila de movimiento (sin modificar el original)
-function agregarFilaMovimiento(mov, tbody) {
+// Función para generar el HTML de un movimiento
+function generarHTMLMovimiento(mov) {
   const monto = parseFloat(mov.monto);
-  const fila = document.createElement("tr");
-  fila.id = `movimiento-${mov.id}`;
   let fechaFormateada = "";
   let mes = mov.mes || "";
   let año = mov.año || "";
+  
   if (mov.fecha) {
     let soloFecha = mov.fecha.split("T")[0];
     if (soloFecha.includes("-")) {
@@ -236,7 +240,8 @@ function agregarFilaMovimiento(mov, tbody) {
       fechaFormateada = mov.fecha;
     }
   }
-  fila.innerHTML = `
+
+  return `
     <td>${fechaFormateada}</td>
     <td>${mov.empresa || ""}</td>
     <td>${mov.tipo}</td>
@@ -261,8 +266,17 @@ function agregarFilaMovimiento(mov, tbody) {
       </button>
     </td>
   `;
-  tbody.appendChild(fila);
+}
 
+// Función para agregar una fila de movimiento
+function agregarFilaMovimiento(mov, tbody) {
+  const fila = document.createElement("tr");
+  fila.id = `movimiento-${mov.id}`;
+  fila.className = 'movimiento-detalle';
+  const clave = mov.mes && mov.año ? `${mov.mes}-${mov.año}` : mov.mes;
+  fila.setAttribute('data-mes', clave);
+  fila.innerHTML = generarHTMLMovimiento(mov);
+  tbody.appendChild(fila);
 }
 
 // Cambiar estado de movimiento
