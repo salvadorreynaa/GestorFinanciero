@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
           
           const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
           const url = state.modoOpciones === "empresa" ? 
-            `${baseUrl}/api/empresas/eliminar/${encodeURIComponent(valor)}` : 
+            `${baseUrl}/api/empresas/${encodeURIComponent(valor)}` : 
             `${baseUrl}/api/tipos_movimiento/eliminar/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
           
           fetch(url, { 
@@ -642,8 +642,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const monto = parseFloat(elements.monto?.value);
     const empresa = elements.selectEmpresa?.value;
 
-    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto)) {
-      alert('Por favor, complete todos los campos requeridos correctamente.');
+    if (!tipo || !tipoMovimiento || !descripcion || !fecha || isNaN(monto) || !empresa) {
+      alert('Por favor, complete todos los campos requeridos correctamente. No olvide seleccionar una empresa.');
       return;
     }
     state.guardando = true;
