@@ -116,12 +116,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // Función optimizada para actualizar opciones
   async function actualizarOpcionesTipoMovimiento() {
     const tipo = elements.tipoSelect.value;
-    const tipos = await fetchConCache(`/api/tipos_movimiento?tipo=${tipo}`, 'tiposMovimiento');
+    const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
+    const response = await fetch(`${baseUrl}/api/tipos_movimiento?tipo=${tipo}`);
+    const tipos = await response.json();
     
     if (tipo === 'ingreso') {
       opcionesIngreso = tipos.map(t => t.nombre);
+      opcionesEgreso = [];
     } else if (tipo === 'egreso') {
       opcionesEgreso = tipos.map(t => t.nombre);
+      opcionesIngreso = [];
     }
     actualizarAwesompleteInicio(tipo);
   }
@@ -263,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
               }
 
               // Construimos la URL correctamente
-              const url = `${baseUrl}/api/empresas/editar/${encodeURIComponent(valorAntiguo)}`;
+              const url = `${baseUrl}/api/empresas/${encodeURIComponent(valorAntiguo)}`;
               console.log('Intentando actualizar empresa en:', url);
 
               fetch(url, {
