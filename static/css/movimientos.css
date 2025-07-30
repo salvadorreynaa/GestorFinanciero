@@ -3,11 +3,26 @@
     max-height: 0;
     opacity: 0;
     overflow: hidden;
+    width: 100%;
 }
 
 .grupo-mes.expanded {
     max-height: 2000px;
     opacity: 1;
+}
+
+.grupo-mes .tabla-movimientos {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grupo-mes .tabla-movimientos tr {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.grupo-mes .tabla-movimientos td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
 }
 
 .grupo-header {

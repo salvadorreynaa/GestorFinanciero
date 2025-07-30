@@ -186,15 +186,26 @@ async function cargarMovimientos() {
         // Añadir delay mínimo para la animación
         await new Promise(resolve => setTimeout(resolve, 300));
         
+        // Buscar y eliminar el contenedor existente si lo hay
+        const contenedorExistente = filaResumen.nextElementSibling;
+        if (contenedorExistente && contenedorExistente.classList.contains('grupo-mes')) {
+          contenedorExistente.remove();
+        }
+        
+        // Toggle estado
         window.estadoExpandidoMes[clave] = !window.estadoExpandidoMes[clave];
         
-        const contenedorMovimientos = document.createElement('div');
-        contenedorMovimientos.className = 'grupo-mes';
-        
         if (window.estadoExpandidoMes[clave]) {
+          const contenedorMovimientos = document.createElement('div');
+          contenedorMovimientos.className = 'grupo-mes';
           tbody.insertBefore(contenedorMovimientos, filaResumen.nextSibling);
+          
           // Renderizar movimientos con animación
           setTimeout(() => {
+            const tabla = document.createElement('table');
+            tabla.className = 'tabla-movimientos';
+            contenedorMovimientos.appendChild(tabla);
+            
             movimientosMes.forEach((mov, index) => {
               const tr = document.createElement('tr');
               tr.style.animationDelay = `${index * 50}ms`;
@@ -219,29 +230,31 @@ async function cargarMovimientos() {
               tr.innerHTML = `
                 <td>${fechaFormateada}</td>
                 <td>${mov.empresa || ""}</td>
-                <td>${mov.tipo}</td>
+                <td>${mov.tipo || ""}</td>
                 <td>${mov.tipoMovimiento || ""}</td>
-                <td>${mov.descripcion}</td>
+                <td>${mov.descripcion || ""}</td>
                 <td>${mes}</td>
                 <td>${año}</td>
-                <td>${monto.toFixed(2)}</td>
+                <td>S/ ${monto.toFixed(2)}</td>
                 <td>
                   <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstadoMovimiento('${mov.id}', this)">${mov.estado}</button>
                 </td>
-                <td style="display:flex;gap:6px;align-items:center;">
-                  <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
-                    </svg>
-                  </button>
-                  <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
-                    </svg>
-                  </button>
+                <td>
+                  <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
+                    <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
+                      </svg>
+                    </button>
+                    <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               `;
-              contenedorMovimientos.appendChild(tr);
+              tabla.appendChild(tr);
             });
             contenedorMovimientos.classList.add('expanded');
           }, 50);
