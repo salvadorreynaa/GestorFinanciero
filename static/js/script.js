@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
               }
 
-              const url = `${baseUrl}/api/tipos_movimiento/editar/${encodeURIComponent(valorAntiguo)}?tipo=${state.tipoOpciones}`;
+              const url = `${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valorAntiguo)}`;
               console.log('Intentando actualizar tipo de movimiento en:', url);
 
               fetch(url, {
@@ -344,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
           const url = state.modoOpciones === "empresa" ? 
             `${baseUrl}/api/empresas/${encodeURIComponent(valor)}` : 
-            `${baseUrl}/api/tipos_movimiento/eliminar/${encodeURIComponent(valor)}?tipo=${state.tipoOpciones}`;
+            `${baseUrl}/api/tipos_movimiento/${encodeURIComponent(valor)}`;
           
           fetch(url, { 
             method: 'DELETE',
