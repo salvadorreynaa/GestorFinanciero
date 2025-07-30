@@ -145,161 +145,67 @@ async function cargarMovimientos() {
   // Para expandir/collapse: guardar estado en memoria
   if (!window.estadoExpandidoMes) window.estadoExpandidoMes = {};
 
-    // Ordenar claves de mes/año por fecha descendente
-    const clavesOrdenadas = Object.keys(grupos).sort((a, b) => {
-      const [mesA, añoA] = a.split("-").map(s => s ? s.trim() : '');
-      const [mesB, añoB] = b.split("-").map(s => s ? s.trim() : '');
-      // Convertir mes a número
-      const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-      const numA = (parseInt(añoA) || 0) * 100 + (meses.indexOf(mesA) + 1);
-      const numB = (parseInt(añoB) || 0) * 100 + (meses.indexOf(mesB) + 1);
-      return numB - numA;
-    });  let hayMovimientos = false;
+  // Ordenar claves de mes/año por fecha descendente
+  const clavesOrdenadas = Object.keys(grupos).sort((a, b) => {
+    const [mesA, añoA] = a.split("-").map(s => s ? s.trim() : '');
+    const [mesB, añoB] = b.split("-").map(s => s ? s.trim() : '');
+    // Convertir mes a número
+    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const numA = (parseInt(añoA) || 0) * 100 + (meses.indexOf(mesA) + 1);
+    const numB = (parseInt(añoB) || 0) * 100 + (meses.indexOf(mesB) + 1);
+    return numB - numA;
+  });
+  
+  let hayMovimientos = false;
   let loadingGrupo = false;
 
   clavesOrdenadas.forEach(clave => {
     const movimientosMes = grupos[clave];
-    if (movimientosMes.length > 0) hayMovimientos = true;
+    if (movimientosMes.length > 0) {
+      hayMovimientos = true;
+    }
+
     const todosCompletos = movimientosMes.every(mov => mov.estado === "Pagado" || mov.estado === "Cobrado");
     const hayPendientes = movimientosMes.some(mov => mov.estado === "Pendiente");
-    // Si todos completos y no hay pendientes, mostrar fila resumen
+
     if (todosCompletos && !hayPendientes) {
-      // Fila resumen personalizada
       const filaResumen = document.createElement("tr");
-      filaResumen.className = `fila-resumen-mes grupo-loading${window.estadoExpandidoMes[clave] ? " abierta" : ""}`;
+      filaResumen.className = 'mes-colapsado';
       const [mes, año] = clave.split("-").map(s => s ? s.trim() : '');
       let textoResumen = mes;
-      if (año) textoResumen += ` - ${año}`;
+      if (año) {
+        textoResumen += ` - ${año}`;
+      }
       
       filaResumen.innerHTML = `
-        <td colspan="10" style="text-align:center;position:relative;padding:10px;cursor:pointer;background-color:#f8f9fa;">
-          <span class="resumen-mes-texto" style="font-weight:500;">
-            ${textoResumen}
-          </span>
-          <span style="margin-left:10px;color:#666;font-size:0.9em;">(Click para expandir)</span>
+        <td colspan="10" style="text-align:center;padding:8px;">
+          <span style="font-weight:500;">${textoResumen}</span>
+          <span style="margin-left:10px;color:#666;">(Click para ver detalles)</span>
         </td>
       `;
-      filaResumen.addEventListener("click", async () => {
-        if (loadingGrupo) return; // Prevenir clics múltiples
-        loadingGrupo = true;
-        filaResumen.classList.add('loading');
-        
-        // Añadir delay mínimo para la animación
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Buscar y eliminar el contenedor existente si lo hay
-        const contenedorExistente = filaResumen.nextElementSibling;
-        if (contenedorExistente && contenedorExistente.classList.contains('grupo-mes')) {
-          contenedorExistente.remove();
-        }
-        
-        // Toggle estado
+      
+      filaResumen.addEventListener("click", () => {
         window.estadoExpandidoMes[clave] = !window.estadoExpandidoMes[clave];
         
-        if (window.estadoExpandidoMes[clave]) {
-          const contenedorMovimientos = document.createElement('div');
-          contenedorMovimientos.className = 'grupo-mes';
-          tbody.insertBefore(contenedorMovimientos, filaResumen.nextSibling);
-          
-          // Renderizar movimientos con animación
-          setTimeout(() => {
-            // Crear la estructura completa de la tabla
-            const tabla = document.createElement('table');
-            tabla.className = 'tabla-movimientos';
-            tabla.innerHTML = `
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Empresa</th>
-                  <th>Tipo</th>
-                  <th>T. Movimiento</th>
-                  <th>Descripcion</th>
-                  <th>Mes</th>
-                  <th>Año</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            `;
-            contenedorMovimientos.appendChild(tabla);
-            
-            movimientosMes.forEach((mov, index) => {
-              const tr = document.createElement('tr');
-              tr.style.animationDelay = `${index * 50}ms`;
-              const monto = parseFloat(mov.monto);
-              let fechaFormateada = "";
-              let mes = mov.mes || "";
-              let año = mov.año || "";
-              if (mov.fecha) {
-                let soloFecha = mov.fecha.split("T")[0];
-                if (soloFecha.includes("-")) {
-                  const [añoF, mesF, diaF] = soloFecha.split("-");
-                  fechaFormateada = `${diaF}/${mesF}/${añoF}`;
-                  if (!mes) {
-                    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-                    mes = mesesNombres[parseInt(mesF,10)-1];
-                  }
-                  if (!año) año = añoF;
-                } else {
-                  fechaFormateada = mov.fecha;
-                }
-              }
-              tr.innerHTML = `
-                <td>${fechaFormateada}</td>
-                <td>${mov.empresa || ""}</td>
-                <td>${mov.tipo || ""}</td>
-                <td>${mov.tipoMovimiento || ""}</td>
-                <td>${mov.descripcion || ""}</td>
-                <td>${mes}</td>
-                <td>${año}</td>
-                <td>S/ ${monto.toFixed(2)}</td>
-                <td>
-                  <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstadoMovimiento('${mov.id}', this)">${mov.estado}</button>
-                </td>
-                <td>
-                  <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
-                    <button class="boton-editar" title="Editar" onclick="editarMovimiento('${mov.id}')">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M4 21h17v2H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2v2H4v17zm16.7-13.3a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-9.3 9.3a1 1 0 0 0-.3.7V17a1 1 0 0 0 1 1h4.3a1 1 0 0 0 .7-.3l9.3-9.3zm-2.4-1.4 2 2-1.3 1.3-2-2 1.3-1.3zm-8.3 8.3 7-7 2 2-7 7H8v-2z"/>
-                      </svg>
-                    </button>
-                    <button class="boton-eliminar" title="Eliminar" onclick="eliminarMovimiento('${mov.id}')">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              `;
-              tabla.querySelector('tbody').appendChild(tr);
-            });
-            contenedorMovimientos.classList.add('expanded');
-            
-            // Ajustar estilos para que coincidan con la tabla principal
-            tabla.style.width = '100%';
-            tabla.style.borderCollapse = 'collapse';
-            tabla.querySelectorAll('th, td').forEach(cell => {
-              cell.style.padding = '8px';
-              cell.style.textAlign = 'left';
-              cell.style.borderBottom = '1px solid #eee';
-            });
-          }, 50);
-        }
+        const movimientosParaEliminar = Array.from(tbody.querySelectorAll('.movimiento-detalle'));
+        movimientosParaEliminar.forEach(fila => fila.remove());
         
-        filaResumen.classList.remove('loading');
-        loadingGrupo = false;
+        if (window.estadoExpandidoMes[clave]) {
+          const movimientosOrdenados = [...movimientosMes].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+          movimientosOrdenados.forEach(mov => {
+            agregarFilaMovimiento(mov, tbody);
+          });
+        }
       });
+
       tbody.appendChild(filaResumen);
-      
     } else {
-      // Mostrar todos los movimientos normalmente
       movimientosMes.forEach(mov => {
         agregarFilaMovimiento(mov, tbody);
       });
     }
   });
+
   // Si no hay movimientos, mostrar mensaje
   if (!hayMovimientos) {
     const filaVacia = document.createElement("tr");

@@ -1,28 +1,10 @@
-.grupo-mes {
-    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    width: 100%;
+.mes-colapsado {
+    background-color: #f8f9fa;
+    cursor: pointer;
 }
 
-.grupo-mes.expanded {
-    max-height: 2000px;
-    opacity: 1;
-}
-
-.grupo-mes .tabla-movimientos {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.grupo-mes .tabla-movimientos tr {
-    animation: fadeIn 0.3s ease forwards;
-}
-
-.grupo-mes .tabla-movimientos td {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+.mes-colapsado:hover {
+    background-color: #e9ecef;
 }
 
 .grupo-header {
@@ -63,6 +45,15 @@
 
 .estado-transition.updating::after {
     opacity: 1;
+}
+
+.movimiento-detalle {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* Indicador de carga para grupos */
