@@ -202,9 +202,13 @@ def api_estadisticas():
         params = []
         
         # Add filters if provided
-        if mes and año and mes != 'Todos' and año != 'Todos':
-            query += ' AND mes = %s AND año = %s'
-            params.extend([mes, año])
+        if mes and mes != 'Todos':
+            query += ' AND mes = %s'
+            params.append(mes)
+        
+        if año and año != 'Todos':
+            query += ' AND año = %s'
+            params.append(año)
             
         cur.execute(query, params)
         rows = cur.fetchall()
