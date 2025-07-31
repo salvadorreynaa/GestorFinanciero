@@ -207,8 +207,15 @@ def api_estadisticas():
             params.append(mes)
         
         if año and año != 'Todos':
-            query += ' AND año = %s'
-            params.append(año)
+            # Convertir año a entero para comparación numérica
+            try:
+                año_int = int(año)
+                query += ' AND CAST(año AS INTEGER) = %s'
+                params.append(año_int)
+            except ValueError:
+                # Si no se puede convertir a entero, usar comparación de string
+                query += ' AND año = %s'
+                params.append(año)
             
         cur.execute(query, params)
         rows = cur.fetchall()
@@ -218,6 +225,11 @@ def api_estadisticas():
         print(f'Estadísticas - Params: {params}')
         print(f'Estadísticas - Filas encontradas: {len(rows)}')
         print(f'Estadísticas - Datos encontrados: {rows[:5]}')  # Mostrar las primeras 5 filas
+        
+        # Debug: Mostrar algunos registros de la base de datos para verificar tipos
+        cur.execute('SELECT DISTINCT año, mes FROM movimientos ORDER BY año DESC, mes LIMIT 10')
+        sample_data = cur.fetchall()
+        print(f'Estadísticas - Muestra de datos en BD: {sample_data}')
         
         ingresos = egresos = cobrado = porCobrar = porPagar = 0
         
@@ -278,13 +290,24 @@ def api_debug_estadisticas():
             params.append(mes)
         
         if año and año != 'Todos':
-            query += ' AND año = %s'
-            params.append(año)
+            # Convertir año a entero para comparación numérica
+            try:
+                año_int = int(año)
+                query += ' AND CAST(año AS INTEGER) = %s'
+                params.append(año_int)
+            except ValueError:
+                # Si no se puede convertir a entero, usar comparación de string
+                query += ' AND año = %s'
+                params.append(año)
             
         query += ' ORDER BY fecha DESC'
         
         cur.execute(query, params)
         rows = cur.fetchall()
+        
+        # Debug adicional: verificar tipos de datos en la BD
+        cur.execute('SELECT DISTINCT año, mes FROM movimientos ORDER BY año DESC, mes LIMIT 10')
+        sample_data = cur.fetchall()
         
         debug_data = []
         for row in rows:
@@ -306,7 +329,12 @@ def api_debug_estadisticas():
             'query': query,
             'params': params,
             'total_movimientos': len(debug_data),
-            'movimientos': debug_data
+            'movimientos': debug_data,
+            'muestra_bd': sample_data,
+            'tipos_datos': {
+                'año_ejemplo': str(sample_data[0][0]) if sample_data else 'N/A',
+                'tipo_año': type(sample_data[0][0]).__name__ if sample_data else 'N/A'
+            }
         })
     except Exception as e:
         print('Error en debug estadísticas:', e)
