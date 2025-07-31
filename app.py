@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify, request, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from functools import wraps
 import psycopg2
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -157,27 +157,45 @@ def movimientos():
 def agregar():
     descripcion = request.form['descripcion']
     monto = request.form['monto']
-    # Aquí deberías obtener empresa y tipo de movimiento del formulario
+    fecha = request.form.get('fecha')
+    mes = request.form.get('mes')
+    año = request.form.get('año')
+    tipo = request.form.get('tipo')
     empresa = request.form.get('empresa')
-    tipo = request.form.get('tiposmovimientos')
+    tipoMovimiento = request.form.get('tiposmovimientos')
+    
     conn = get_db_connection()
     cur = conn.cursor()
+    
     # Insertar empresa si no existe
-    cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
-    empresa_id = cur.fetchone()
-    if not empresa_id:
-        cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
+    if empresa:
+        cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
         empresa_id = cur.fetchone()
-    empresa_id = empresa_id[0] if empresa_id else None
+        if not empresa_id:
+            cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
+            empresa_id = cur.fetchone()
+        empresa_id = empresa_id[0] if empresa_id else None
+    else:
+        empresa_id = None
+    
     # Insertar tipo de movimiento si no existe
-    cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipo,))
-    tipo_id = cur.fetchone()
-    if not tipo_id:
-        cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipo,))
+    if tipoMovimiento:
+        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipoMovimiento, tipo))
         tipo_id = cur.fetchone()
-    tipo_id = tipo_id[0] if tipo_id else None
-    # Insertar movimiento
-    cur.execute('INSERT INTO movimientos (descripcion, monto, empresa_id, tipo_id) VALUES (%s, %s, %s, %s);', (descripcion, monto, empresa_id, tipo_id))
+        if not tipo_id:
+            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipoMovimiento,))
+            tipo_id = cur.fetchone()
+        tipo_id = tipo_id[0] if tipo_id else None
+    else:
+        tipo_id = None
+    
+    # Insertar movimiento con todos los campos
+    cur.execute('''
+        INSERT INTO movimientos 
+        (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa_id, tipo_id, estado)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa_id, tipo_id, 'Pendiente'))
+    
     conn.commit()
     cur.close()
     conn.close()
@@ -210,11 +228,14 @@ def api_estadisticas():
             # Convertir año a entero para comparación numérica
             try:
                 año_int = int(año)
-                query += ' AND CAST(año AS INTEGER) = %s'
+                # Buscar tanto por año exacto como por registros sin año (que se consideran del año actual)
+                query += ' AND (CAST(año AS INTEGER) = %s OR (año IS NULL AND %s = 2025))'
+                params.append(año_int)
                 params.append(año_int)
             except ValueError:
                 # Si no se puede convertir a entero, usar comparación de string
-                query += ' AND año = %s'
+                query += ' AND (año = %s OR (año IS NULL AND %s = 2025))'
+                params.append(año)
                 params.append(año)
             
         cur.execute(query, params)
@@ -268,6 +289,42 @@ def api_estadisticas():
             'porPagar': 0
         }), 200
 
+# --- API endpoint para actualizar años faltantes ---
+@app.route('/api/fix-años', methods=['GET'])
+def api_fix_años():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Obtener todos los movimientos que no tienen año
+        cur.execute('SELECT id, fecha, mes FROM movimientos WHERE año IS NULL')
+        movimientos_sin_año = cur.fetchall()
+        
+        actualizados = 0
+        for id, fecha, mes in movimientos_sin_año:
+            if fecha:
+                # Extraer año de la fecha
+                año = fecha.year
+                cur.execute('UPDATE movimientos SET año = %s WHERE id = %s', (año, id))
+                actualizados += 1
+            elif mes:
+                # Si no hay fecha pero hay mes, usar año actual
+                año = 2025  # Año por defecto
+                cur.execute('UPDATE movimientos SET año = %s WHERE id = %s', (año, id))
+                actualizados += 1
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'mensaje': f'Se actualizaron {actualizados} registros con el año correspondiente',
+            'registros_actualizados': actualizados
+        })
+    except Exception as e:
+        print('Error al actualizar años:', e)
+        return jsonify({'error': str(e)}), 500
+
 # --- API endpoint para debug de estadísticas ---
 @app.route('/api/debug-estadisticas', methods=['GET'])
 def api_debug_estadisticas():
@@ -293,11 +350,14 @@ def api_debug_estadisticas():
             # Convertir año a entero para comparación numérica
             try:
                 año_int = int(año)
-                query += ' AND CAST(año AS INTEGER) = %s'
+                # Buscar tanto por año exacto como por registros sin año (que se consideran del año actual)
+                query += ' AND (CAST(año AS INTEGER) = %s OR (año IS NULL AND %s = 2025))'
+                params.append(año_int)
                 params.append(año_int)
             except ValueError:
                 # Si no se puede convertir a entero, usar comparación de string
-                query += ' AND año = %s'
+                query += ' AND (año = %s OR (año IS NULL AND %s = 2025))'
+                params.append(año)
                 params.append(año)
             
         query += ' ORDER BY fecha DESC'
@@ -377,6 +437,7 @@ def api_movimientos():
     except Exception as e:
         print('Error en /api/movimientos:', e)
         return jsonify([]), 200
+
 @app.route('/api/movimientos/<int:id>/estado', methods=['PATCH'])
 @api_login_required
 def api_movimiento_estado(id):
@@ -524,83 +585,6 @@ def api_movimientos_post():
             'status': 'error',
             'error': str(e)
         }), 500
-    try:
-        data = request.get_json()
-        descripcion = data.get('descripcion')
-        monto = data.get('monto')
-        fecha = data.get('fecha')
-        mes = data.get('mes')
-        año = data.get('año')
-        tipo = data.get('tipo')
-        tipoMovimiento = data.get('tipoMovimiento')
-        empresa = data.get('empresa')
-        estado = data.get('estado', 'Pendiente')
-
-        if not all([descripcion, monto, fecha, mes, año, tipo, tipoMovimiento]):
-            return jsonify({'error': 'Faltan campos requeridos'}), 400
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        # Insertar empresa si no existe
-        if empresa:
-            cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING;', (empresa,))
-
-        # Insertar el movimiento
-        cur.execute('''
-            INSERT INTO movimientos 
-            (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
-        ''', (descripcion, monto, fecha, mes, año, tipo, tipoMovimiento, empresa, estado))
-
-        id_movimiento = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({
-            'id': id_movimiento,
-            'status': 'ok',
-            'message': 'Movimiento creado exitosamente'
-        })
-        tipo_movimiento = data.get('tipoMovimiento')
-        descripcion = data.get('descripcion')
-        fecha = data.get('fecha')
-        mes = data.get('mes')
-        año = data.get('año')
-        monto = data.get('monto')
-        empresa = data.get('empresa')
-        estado = data.get('estado', 'Pendiente')
-        conn = get_db_connection()
-        cur = conn.cursor()
-        # Insertar empresa si no existe
-        cur.execute('INSERT INTO empresas (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (empresa,))
-        empresa_id = cur.fetchone()
-        if not empresa_id:
-            cur.execute('SELECT id FROM empresas WHERE nombre=%s;', (empresa,))
-            empresa_id = cur.fetchone()
-        empresa_id = empresa_id[0] if empresa_id else None
-        # Insertar tipo de movimiento si no existe
-        cur.execute('INSERT INTO tipos_movimiento (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipo_movimiento,))
-        tipo_id = cur.fetchone()
-        if not tipo_id:
-            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipo_movimiento,))
-            tipo_id = cur.fetchone()
-        tipo_id = tipo_id[0] if tipo_id else None
-        # Insertar movimiento
-        cur.execute('''
-            INSERT INTO movimientos (tipo, tipoMovimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ''', (tipo, tipo_movimiento, descripcion, fecha, mes, año, monto, empresa_id, estado, tipo_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({'status': 'ok'})
-    except Exception as e:
-        print('Error en /api/movimientos POST:', e)
-        import traceback; traceback.print_exc()
-        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 # --- API endpoints para contactos ---
 @app.route('/api/contactos', methods=['GET'])
@@ -825,3 +809,6 @@ def api_movimientos_patch(id):
     except Exception as e:
         print('Error al editar movimiento:', e)
         return jsonify({'status': 'error', 'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
