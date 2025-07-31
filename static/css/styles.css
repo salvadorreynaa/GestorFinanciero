@@ -25,7 +25,7 @@ header {
   justify-content: space-between;
   padding: 0 40px;
   background-color: #ffffff;
-  height: 80px;
+  height: 90px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
   width: 100%;
   border-bottom: 3px solid #e0e0e0;
@@ -38,7 +38,7 @@ header {
 }
 
 header img {
-  height: 60px;
+  height: 150px;
   width: auto;
   margin: 0;
   will-change: transform;
@@ -132,7 +132,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  padding-top: 80px; /* Espacio para el header fijo */
+  padding-top: 90px; /* Espacio para el header fijo */
   background: #f7f7f7;
   font-size: 14px;
   min-height: 100vh;
@@ -140,7 +140,7 @@ body {
 
 @media (max-width: 600px) {
   body {
-    padding-top: 70px;
+    padding-top: 80px;
   }
 }
 
@@ -156,15 +156,15 @@ body {
   }
 
   nav {
-    display: none;
-    position: absolute;
-    top: 80px;
-    right: 0;
-    width: 280px;
-    background: white;
-    z-index: 1000;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
-  }
+  display: none;
+  position: absolute;
+  top: 90px;
+  right: 0;
+  width: 280px;
+  background: white;
+  z-index: 1000;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+}
 
   nav.active {
     display: block;
@@ -836,11 +836,11 @@ form .check-button:hover {
    ========================= */
 @media (max-width: 600px) {
   header {
-    height: 70px;
+    height: 80px;
     padding: 0 15px;
   }
   header img {
-    height: 50px;
+    height: 80px;
     margin: 0;
   }
   #modal-editar > div {

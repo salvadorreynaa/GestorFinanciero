@@ -203,7 +203,7 @@ def api_estadisticas():
         
         # Add filters if provided
         if mes and mes != 'Todos':
-            query += ' AND mes = %s'
+            query += ' AND LOWER(mes) = LOWER(%s)'
             params.append(mes)
         
         if año and año != 'Todos':
@@ -213,9 +213,15 @@ def api_estadisticas():
         cur.execute(query, params)
         rows = cur.fetchall()
         
+        print(f'Estadísticas - Filtros: mes={mes}, año={año}')
+        print(f'Estadísticas - Query: {query}')
+        print(f'Estadísticas - Params: {params}')
+        print(f'Estadísticas - Filas encontradas: {len(rows)}')
+        print(f'Estadísticas - Datos encontrados: {rows[:5]}')  # Mostrar las primeras 5 filas
+        
         ingresos = egresos = cobrado = porCobrar = porPagar = 0
         
-        for tipo, monto, estado, _, _ in rows:
+        for tipo, monto, estado, mes, año in rows:
             if monto is not None:
                 monto = float(monto)
                 if tipo == 'ingreso':
@@ -249,6 +255,62 @@ def api_estadisticas():
             'porCobrar': 0,
             'porPagar': 0
         }), 200
+
+# --- API endpoint para debug de estadísticas ---
+@app.route('/api/debug-estadisticas', methods=['GET'])
+def api_debug_estadisticas():
+    try:
+        mes = request.args.get('mes')
+        año = request.args.get('año')
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Query para ver todos los movimientos
+        query = '''
+            SELECT id, tipo, monto, estado, mes, año, descripcion
+            FROM movimientos 
+            WHERE 1=1
+        '''
+        params = []
+        
+        if mes and mes != 'Todos':
+            query += ' AND LOWER(mes) = LOWER(%s)'
+            params.append(mes)
+        
+        if año and año != 'Todos':
+            query += ' AND año = %s'
+            params.append(año)
+            
+        query += ' ORDER BY fecha DESC'
+        
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        
+        debug_data = []
+        for row in rows:
+            debug_data.append({
+                'id': row[0],
+                'tipo': row[1],
+                'monto': float(row[2]) if row[2] else 0,
+                'estado': row[3],
+                'mes': row[4],
+                'año': row[5],
+                'descripcion': row[6]
+            })
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'filtros': {'mes': mes, 'año': año},
+            'query': query,
+            'params': params,
+            'total_movimientos': len(debug_data),
+            'movimientos': debug_data
+        })
+    except Exception as e:
+        print('Error en debug estadísticas:', e)
+        return jsonify({'error': str(e)}), 500
 
 # --- API endpoints para movimientos ---
 @app.route('/api/movimientos', methods=['GET'])
