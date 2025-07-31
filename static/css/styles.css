@@ -296,32 +296,34 @@ form .check-button:hover {
 @media (max-width: 600px) {
   form {
     max-width: 95vw;
-    padding: 12px 10px;
-    margin: 15px auto;
+    padding: 8px 8px;
+    margin: 10px auto;
   }
   
   .form-row {
     flex-direction: column;
-    gap: 6px; /* Reducir espacio entre filas */
-    margin-bottom: 8px; /* Reducir margen inferior */
+    gap: 0; /* ELIMINAR completamente el espacio entre filas */
+    margin-bottom: 0; /* ELIMINAR margen inferior */
   }
   
   .form-row label {
     min-width: 100%;
     margin-right: 0;
-    margin-bottom: 2px; /* Reducir espacio entre label e input */
-    font-size: 13px;
+    margin-bottom: 0; /* ELIMINAR espacio entre label e input */
+    font-size: 12px;
+    padding-bottom: 2px;
   }
   
   form input, form select {
-    padding: 6px 10px; /* Reducir padding vertical */
+    padding: 4px 8px; /* Reducir más el padding vertical */
     font-size: 14px;
+    margin-bottom: 0; /* ELIMINAR margen inferior de inputs */
   }
   
   form .check-button {
-    margin-top: 6px; /* Reducir margen superior */
-    padding: 6px 12px; /* Reducir padding */
-    font-size: 13px;
+    margin-top: 4px; /* Reducir margen superior */
+    padding: 8px 12px;
+    font-size: 14px;
   }
 }
 /* =========================
