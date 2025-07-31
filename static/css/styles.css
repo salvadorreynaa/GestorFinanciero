@@ -291,6 +291,39 @@ form .check-button:hover {
     margin-right: 0;
   }
 }
+
+/* Reducir espaciado del formulario solo en móviles pequeños */
+@media (max-width: 600px) {
+  form {
+    max-width: 95vw;
+    padding: 12px 10px;
+    margin: 15px auto;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 6px; /* Reducir espacio entre filas */
+    margin-bottom: 8px; /* Reducir margen inferior */
+  }
+  
+  .form-row label {
+    min-width: 100%;
+    margin-right: 0;
+    margin-bottom: 2px; /* Reducir espacio entre label e input */
+    font-size: 13px;
+  }
+  
+  form input, form select {
+    padding: 6px 10px; /* Reducir padding vertical */
+    font-size: 14px;
+  }
+  
+  form .check-button {
+    margin-top: 6px; /* Reducir margen superior */
+    padding: 6px 12px; /* Reducir padding */
+    font-size: 13px;
+  }
+}
 /* =========================
    BOTONES DE AGREGAR EMPRESA Y TIPO
    ========================= */
