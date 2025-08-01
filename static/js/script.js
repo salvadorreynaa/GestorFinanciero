@@ -624,8 +624,8 @@ document.addEventListener("DOMContentLoaded", () => {
       fechaPrincipal.className = 'fecha-principal';
       fechaPrincipal.innerHTML = `
         <span>${fecha}</span>
-        <button class="btn-agregar" onclick="agregarFechaAdicional('${fecha}')">+</button>
-        <button class="btn-editar" onclick="editarFecha('${fecha}')">✎</button>
+        <button type="button" class="btn-agregar" onclick="agregarFechaAdicional(event, '${fecha}')">+</button>
+        <button type="button" class="btn-editar" onclick="editarFecha(event, '${fecha}')">✎</button>
       `;
       
       grupo.appendChild(fechaPrincipal);
