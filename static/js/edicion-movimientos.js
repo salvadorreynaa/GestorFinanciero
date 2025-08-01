@@ -234,6 +234,24 @@ function guardarEdicion() {
         // Convertir la fecha de YYYY-MM-DD a DD/MM/YYYY
         const [anio, mes, dia] = fecha.split('-');
         const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
+
+        // Actualizar el formulario principal
+        const formPrincipal = document.getElementById('formulario');
+        if (formPrincipal) {
+            formPrincipal.querySelector('select[name="tipo"]').value = tipo;
+            formPrincipal.querySelector('input[name="tipo_movimiento"]').value = tipoMovimiento;
+            formPrincipal.querySelector('select[name="empresa"]').value = empresa;
+            formPrincipal.querySelector('input[name="monto"]').value = monto;
+            formPrincipal.querySelector('input[name="descripcion"]').value = descripcion;
+            
+            // Actualizar los campos ocultos de mes y año si existen
+            const mesInput = formPrincipal.querySelector('input[name="mes"]');
+            const anioInput = formPrincipal.querySelector('input[name="año"]');
+            if (mesInput && anioInput) {
+                mesInput.value = parseInt(mes);
+                anioInput.value = anio;
+            }
+        }
         
         // Actualizar la visualización
         actualizarVisualizacionMovimiento(fechaEnEdicion, {
@@ -277,6 +295,27 @@ function actualizarVisualizacionMovimiento(fechaAntigua, movimientoNuevo) {
                 const botonEditar = elemento.querySelector('.btn-editar');
                 if (botonEditar) {
                     botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
+                }
+
+                // Actualizar la información en la tabla de movimientos si existe
+                const tablaMovimientos = document.querySelector('table');
+                if (tablaMovimientos) {
+                    const filas = tablaMovimientos.querySelectorAll('tr');
+                    filas.forEach(fila => {
+                        const celdaFecha = fila.querySelector('td:nth-child(1)'); // Primera columna (fecha)
+                        if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
+                            // Actualizar cada celda con la nueva información
+                            const celdas = fila.querySelectorAll('td');
+                            if (celdas.length >= 6) {
+                                celdas[0].textContent = movimientoNuevo.fecha; // Fecha
+                                celdas[1].textContent = movimientoNuevo.empresa; // Empresa
+                                celdas[2].textContent = movimientoNuevo.descripcion; // Descripción
+                                celdas[3].textContent = movimientoNuevo.tipo; // Tipo
+                                celdas[4].textContent = movimientoNuevo.tipoMovimiento; // Tipo de Movimiento
+                                celdas[5].textContent = movimientoNuevo.monto; // Monto
+                            }
+                        }
+                    });
                 }
             }
         });
