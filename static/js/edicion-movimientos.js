@@ -238,16 +238,24 @@ function guardarEdicion() {
         // Actualizar el formulario principal
         const formPrincipal = document.getElementById('formulario');
         if (formPrincipal) {
-            formPrincipal.querySelector('select[name="tipo"]').value = tipo;
-            formPrincipal.querySelector('input[name="tipo_movimiento"]').value = tipoMovimiento;
-            formPrincipal.querySelector('select[name="empresa"]').value = empresa;
-            formPrincipal.querySelector('input[name="monto"]').value = monto;
-            formPrincipal.querySelector('input[name="descripcion"]').value = descripcion;
+            // Usar optional chaining para evitar errores si algún elemento no existe
+            const tipoSelect = formPrincipal.querySelector('select[name="tipo"]');
+            const tipoMovimientoInput = formPrincipal.querySelector('input[name="tipo_movimiento"]');
+            const empresaSelect = formPrincipal.querySelector('select[name="empresa"]');
+            const montoInput = formPrincipal.querySelector('input[name="monto"]');
+            const descripcionInput = formPrincipal.querySelector('input[name="descripcion"]');
+            
+            // Actualizar solo si los elementos existen
+            if (tipoSelect) tipoSelect.value = tipo;
+            if (tipoMovimientoInput) tipoMovimientoInput.value = tipoMovimiento;
+            if (empresaSelect) empresaSelect.value = empresa;
+            if (montoInput) montoInput.value = monto;
+            if (descripcionInput) descripcionInput.value = descripcion;
             
             // Actualizar los campos ocultos de mes y año si existen
             const mesInput = formPrincipal.querySelector('input[name="mes"]');
             const anioInput = formPrincipal.querySelector('input[name="año"]');
-            if (mesInput && anioInput) {
+            if (mesInput && anioInput && mes && anio) {
                 mesInput.value = parseInt(mes);
                 anioInput.value = anio;
             }
@@ -284,41 +292,59 @@ function guardarEdicion() {
 
 function actualizarVisualizacionMovimiento(fechaAntigua, movimientoNuevo) {
     try {
+        if (!fechaAntigua || !movimientoNuevo) {
+            console.error('Datos faltantes para actualizar la visualización');
+            return;
+        }
+
         // Actualizar la fecha en el elemento visual
         const elementos = document.querySelectorAll('.fecha-adicional');
+        let actualizado = false;
+
         elementos.forEach(elemento => {
             const fechaSpan = elemento.querySelector('span');
             if (fechaSpan && fechaSpan.textContent === fechaAntigua) {
+                // Actualizar la fecha
                 fechaSpan.textContent = movimientoNuevo.fecha;
+                actualizado = true;
                 
                 // Actualizar el onclick del botón de edición
                 const botonEditar = elemento.querySelector('.btn-editar');
                 if (botonEditar) {
                     botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
                 }
-
-                // Actualizar la información en la tabla de movimientos si existe
-                const tablaMovimientos = document.querySelector('table');
-                if (tablaMovimientos) {
-                    const filas = tablaMovimientos.querySelectorAll('tr');
-                    filas.forEach(fila => {
-                        const celdaFecha = fila.querySelector('td:nth-child(1)'); // Primera columna (fecha)
-                        if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
-                            // Actualizar cada celda con la nueva información
-                            const celdas = fila.querySelectorAll('td');
-                            if (celdas.length >= 6) {
-                                celdas[0].textContent = movimientoNuevo.fecha; // Fecha
-                                celdas[1].textContent = movimientoNuevo.empresa; // Empresa
-                                celdas[2].textContent = movimientoNuevo.descripcion; // Descripción
-                                celdas[3].textContent = movimientoNuevo.tipo; // Tipo
-                                celdas[4].textContent = movimientoNuevo.tipoMovimiento; // Tipo de Movimiento
-                                celdas[5].textContent = movimientoNuevo.monto; // Monto
-                            }
-                        }
-                    });
-                }
             }
         });
+
+        // Si no se encontró la fecha en los elementos adicionales, buscar en la tabla
+        const tablaMovimientos = document.querySelector('table');
+        if (tablaMovimientos) {
+            const filas = tablaMovimientos.querySelectorAll('tr');
+            filas.forEach(fila => {
+                const celdaFecha = fila.querySelector('td:nth-child(1)'); // Primera columna (fecha)
+                if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
+                    actualizado = true;
+                    // Actualizar cada celda con la nueva información
+                    try {
+                        const celdas = fila.querySelectorAll('td');
+                        if (celdas.length >= 6) {
+                            celdas[0].textContent = movimientoNuevo.fecha || celdas[0].textContent; // Fecha
+                            celdas[1].textContent = movimientoNuevo.empresa || celdas[1].textContent; // Empresa
+                            celdas[2].textContent = movimientoNuevo.descripcion || celdas[2].textContent; // Descripción
+                            celdas[3].textContent = movimientoNuevo.tipo || celdas[3].textContent; // Tipo
+                            celdas[4].textContent = movimientoNuevo.tipoMovimiento || celdas[4].textContent; // Tipo de Movimiento
+                            celdas[5].textContent = movimientoNuevo.monto || celdas[5].textContent; // Monto
+                        }
+                    } catch (err) {
+                        console.error('Error al actualizar celdas de la tabla:', err);
+                    }
+                }
+            });
+        }
+
+        if (!actualizado) {
+            console.warn('No se encontró el movimiento a actualizar');
+        }
         
         // Actualizar el contador y la explicación si es necesario
         if (typeof actualizarContadorMovimientos === 'function') {
