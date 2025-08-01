@@ -591,10 +591,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let fechas = [];
     let mesActual = mesInicio;
     let anioActual = parseInt(anioI);
+    
+    // Calcular el número de meses
+    const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
+                 (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
 
     // Generar todas las fechas principales
-    for (let i = 0; i < ((fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
-                        (fechaFin.getMonth() - fechaInicio.getMonth()) + 1); i++) {
+    for (let i = 0; i < meses; i++) {
       const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
       const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
       fechas.push(fecha);
@@ -614,10 +617,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Construir la explicación de las fechas
     let explicacion = `Se crearán ${totalMovimientos} movimientos en las siguientes fechas:`;
-    window.fechasAdicionales = {};
+
+    // Inicializar fechasAdicionales si no existe
+    window.fechasAdicionales = window.fechasAdicionales || {};
 
     // Generar todas las fechas
-    for (let i = 0; i < meses; i++) {
+    for (let i = 0; i < fechas.length; i++) {
       const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
       const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
       fechas.push(fecha);
