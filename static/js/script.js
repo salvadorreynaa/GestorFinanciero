@@ -588,19 +588,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const diaAjustadoFin = ajustarFecha(parseInt(anioFin), mesFinal, diaOriginal);
     const fechaFin = new Date(parseInt(anioFin), mesFinal, diaAjustadoFin);
 
-    let fechas = [];
-    let mesActual = mesInicio;
-    let anioActual = parseInt(anioI);
-    
     // Calcular el número de meses
     const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
                  (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
 
+    // Verificar que el número de meses sea razonable
+    if (meses > 120) { // límite de 10 años
+      alert('El período seleccionado es demasiado largo. Por favor seleccione un período más corto.');
+      return;
+    }
+
     // Generar todas las fechas principales
+    let fechas = [];
+    let mesActual = mesInicio;
+    let anioActual = parseInt(anioI);
+    
+    // Inicializar fechasAdicionales si no existe
+    window.fechasAdicionales = window.fechasAdicionales || {};
+
     for (let i = 0; i < meses; i++) {
       const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
       const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
       fechas.push(fecha);
+      window.fechasAdicionales[fecha] = window.fechasAdicionales[fecha] || [];
       
       mesActual++;
       if (mesActual >= 12) {
@@ -611,56 +621,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Calcular el total de movimientos (principales + adicionales)
     let totalMovimientos = fechas.length;
-    Object.values(window.fechasAdicionales || {}).forEach(fechasAdicionales => {
-      totalMovimientos += fechasAdicionales.length;
+    Object.values(window.fechasAdicionales).forEach(fechasAdicionales => {
+      if (Array.isArray(fechasAdicionales)) {
+        totalMovimientos += fechasAdicionales.length;
+      }
     });
 
     // Construir la explicación de las fechas
     let explicacion = `Se crearán ${totalMovimientos} movimientos en las siguientes fechas:`;
 
-    // Inicializar fechasAdicionales si no existe
-    window.fechasAdicionales = window.fechasAdicionales || {};
-
-    // Generar todas las fechas
-    for (let i = 0; i < fechas.length; i++) {
-      const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
-      const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
-      fechas.push(fecha);
-      window.fechasAdicionales[fecha] = [];
-      
-      mesActual++;
-      if (mesActual >= 12) {
-        mesActual = 0;
-        anioActual++;
-      }
-    }
-
-    // Actualizar el contenedor de fechas
+    // Actualizar el contenedor de fechas de manera más eficiente
     const container = document.getElementById('fechas-container');
-    container.innerHTML = '';
     
-    fechas.forEach(fecha => {
-      const grupo = document.createElement('div');
-      grupo.className = 'fecha-grupo';
-      
-      const fechaPrincipal = document.createElement('div');
-      fechaPrincipal.className = 'fecha-principal';
-      fechaPrincipal.innerHTML = `
-        <span>${fecha}</span>
-        <button type="button" class="btn-agregar" onclick="agregarFechaAdicional(event, '${fecha}')">+</button>
-        <button type="button" class="btn-editar" onclick="editarFecha(event, '${fecha}')">✎</button>
+    // Crear un fragmento para mejor rendimiento
+    const fragment = document.createDocumentFragment();
+    
+    // Construir el HTML para todas las fechas
+    const fechasHTML = fechas.map(fecha => {
+      const fechaId = fecha.replace(/\//g, '-');
+      return `
+        <div class="fecha-grupo">
+          <div class="fecha-principal">
+            <span>${fecha}</span>
+            <button type="button" class="btn-agregar" onclick="agregarFechaAdicional(event, '${fecha}')">+</button>
+            <button type="button" class="btn-editar" onclick="editarFecha(event, '${fecha}')">✎</button>
+          </div>
+          <div class="fechas-adicionales" id="adicionales-${fechaId}">
+            ${window.fechasAdicionales[fecha]?.map(fechaAdicional => `
+              <div class="fecha-adicional">
+                <span>${fechaAdicional}</span>
+                <button type="button" class="btn-editar" onclick="editarFecha(event, '${fechaAdicional}')">✎</button>
+              </div>
+            `).join('') || ''}
+          </div>
+        </div>
       `;
-      
-      grupo.appendChild(fechaPrincipal);
-      
-      // Contenedor para fechas adicionales
-      const adicionales = document.createElement('div');
-      adicionales.className = 'fechas-adicionales';
-      adicionales.id = `adicionales-${fecha.replace(/\//g, '-')}`;
-      grupo.appendChild(adicionales);
-      
-      container.appendChild(grupo);
-    });
+    }).join('');
+    
+    // Actualizar el contenido de una sola vez
+    container.innerHTML = fechasHTML;
 
     explicacion += fechas.join(", ");
     
