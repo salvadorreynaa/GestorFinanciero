@@ -2,6 +2,65 @@
 let fechaEnEdicion = null;
 let movimientoEnEdicion = null;
 
+// Función para cargar tipos de movimiento
+async function cargarTiposMovimiento(tipo) {
+    try {
+        const baseUrl = window.location.origin;
+        const response = await fetch(`${baseUrl}/api/tipos_movimiento/${tipo}`);
+        if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
+        
+        const tipos = await response.json();
+        const tipoMovimientoInput = document.getElementById('editTipoMovimiento');
+        
+        if (tipoMovimientoInput) {
+            // Inicializar o actualizar Awesomplete
+            if (!tipoMovimientoInput.awesomplete) {
+                new Awesomplete(tipoMovimientoInput, {
+                    list: tipos,
+                    minChars: 0
+                });
+            } else {
+                tipoMovimientoInput.awesomplete.list = tipos;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar tipos de movimiento:', error);
+    }
+}
+
+// Función para cargar empresas
+async function cargarEmpresas() {
+    try {
+        const baseUrl = window.location.origin;
+        const response = await fetch(`${baseUrl}/api/empresas`);
+        if (!response.ok) throw new Error('Error al cargar empresas');
+        
+        const empresas = await response.json();
+        const select = document.getElementById('editEmpresa');
+        
+        if (select) {
+            // Mantener la opción por defecto
+            select.innerHTML = '<option value="" disabled>Seleccionar...</option>';
+            
+            // Agregar las empresas
+            empresas.forEach(empresa => {
+                const option = document.createElement('option');
+                option.value = empresa.nombre;
+                option.textContent = empresa.nombre;
+                select.appendChild(option);
+            });
+
+            // Seleccionar la empresa actual si existe
+            const empresaActual = document.querySelector('select[name="empresa"]')?.value;
+            if (empresaActual) {
+                select.value = empresaActual;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar empresas:', error);
+    }
+}
+
 // Asegurarse de que el documento está cargado
 document.addEventListener('DOMContentLoaded', () => {
     // Agregar el modal al body si no existe
@@ -69,26 +128,47 @@ function editarFecha(event, fecha) {
     fechaEnEdicion = fecha;
     const modal = document.getElementById('modalEdicion');
     
-    // Obtener los valores actuales del formulario principal
-    const tipo = document.querySelector('select[name="tipo"]').value;
-    const tipoMovimiento = document.querySelector('input[name="tipo_movimiento"]').value;
-    const descripcion = document.querySelector('input[name="descripcion"]').value;
-    const monto = document.querySelector('input[name="monto"]').value;
-    const empresa = document.querySelector('select[name="empresa"]').value;
-    
-    // Establecer los valores en el formulario de edición
-    document.getElementById('editTipoSelect').value = tipo;
-    document.getElementById('editTipoMovimiento').value = tipoMovimiento;
-    document.getElementById('editDescripcion').value = descripcion;
-    document.getElementById('editFecha').value = fecha;
-    document.getElementById('editMonto').value = monto;
-    document.getElementById('editEmpresa').value = empresa;
-    
-    // Configurar Awesomplete para tipo de movimiento
-    configureAwesompleteEdit();
-    
-    // Mostrar el modal
-    modal.style.display = 'block';
+    try {
+        // Obtener los valores del formulario principal
+        const formPrincipal = document.getElementById('formulario');
+        if (!formPrincipal) {
+            console.error('No se encontró el formulario principal');
+            return;
+        }
+
+        // Obtener los valores actuales
+        const tipo = formPrincipal.querySelector('select[name="tipo"]')?.value || '';
+        const tipoMovimiento = formPrincipal.querySelector('input[name="tipo_movimiento"]')?.value || '';
+        const descripcion = formPrincipal.querySelector('input[name="descripcion"]')?.value || '';
+        const monto = formPrincipal.querySelector('input[name="monto"]')?.value || '';
+        
+        // Establecer valores en el formulario de edición
+        const editForm = document.getElementById('formEdicion');
+        if (editForm) {
+            const tipoSelect = editForm.querySelector('#editTipoSelect');
+            tipoSelect.value = tipo;
+            editForm.querySelector('#editTipoMovimiento').value = tipoMovimiento;
+            editForm.querySelector('#editDescripcion').value = descripcion;
+            editForm.querySelector('#editMonto').value = monto;
+
+            // Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
+            const [dia, mes, anio] = fecha.split('/');
+            editForm.querySelector('#editFecha').value = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+
+            // Cargar tipos de movimiento para el tipo seleccionado
+            cargarTiposMovimiento(tipo);
+        }
+
+        // Cargar empresas
+        cargarEmpresas();
+
+        // Mostrar el modal
+        modal.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error al cargar datos para edición:', error);
+        alert('Hubo un error al cargar los datos para edición. Por favor, intenta de nuevo.');
+    }
 }
 
 function cerrarModalEdicion() {
@@ -101,95 +181,99 @@ function cerrarModalEdicion() {
 function guardarEdicion() {
     if (!fechaEnEdicion) return;
     
-    // Obtener los valores editados
-    const tipo = document.getElementById('editTipoSelect').value;
-    const tipoMovimiento = document.getElementById('editTipoMovimiento').value;
-    const descripcion = document.getElementById('editDescripcion').value;
-    const fecha = document.getElementById('editFecha').value;
-    const monto = document.getElementById('editMonto').value;
-    const empresa = document.getElementById('editEmpresa').value;
-    
-    // Validar campos requeridos
-    if (!tipo || !tipoMovimiento || !descripcion || !fecha || !monto || !empresa) {
-        alert('Por favor, complete todos los campos requeridos.');
-        return;
-    }
-    
-    // Actualizar los datos en el movimiento correspondiente
-    const movimientoActualizado = {
-        tipo,
-        tipoMovimiento,
-        descripcion,
-        fecha,
-        monto,
-        empresa
-    };
-    
-    // Actualizar en el arreglo de fechas adicionales si es una fecha adicional
-    Object.keys(window.fechasAdicionales).forEach(fechaPrincipal => {
-        const index = window.fechasAdicionales[fechaPrincipal].indexOf(fechaEnEdicion);
-        if (index !== -1) {
-            window.fechasAdicionales[fechaPrincipal][index] = fecha;
+    try {
+        // Obtener los valores editados
+        const editForm = document.getElementById('formEdicion');
+        const tipo = editForm.querySelector('#editTipoSelect').value;
+        const tipoMovimiento = editForm.querySelector('#editTipoMovimiento').value;
+        const empresa = editForm.querySelector('#editEmpresa').value;
+        const monto = editForm.querySelector('#editMonto').value;
+        const descripcion = editForm.querySelector('#editDescripcion').value;
+        const fecha = editForm.querySelector('#editFecha').value;
+        
+        // Validar campos requeridos
+        if (!tipo || !tipoMovimiento || !empresa || !monto || !descripcion || !fecha) {
+            alert('Por favor, complete todos los campos requeridos.');
+            return;
         }
-    });
-    
-    // Actualizar la visualización
-    actualizarVisualizacionMovimiento(fechaEnEdicion, movimientoActualizado);
-    
-    // Cerrar el modal
-    cerrarModalEdicion();
+        
+        // Convertir la fecha de YYYY-MM-DD a DD/MM/YYYY
+        const [anio, mes, dia] = fecha.split('-');
+        const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
+        
+        // Actualizar la visualización
+        actualizarVisualizacionMovimiento(fechaEnEdicion, {
+            tipo,
+            tipoMovimiento,
+            empresa,
+            monto,
+            descripcion,
+            fecha: fechaFormateada
+        });
+        
+        // Actualizar en el arreglo de fechas adicionales si es una fecha adicional
+        if (window.fechasAdicionales) {
+            Object.keys(window.fechasAdicionales).forEach(fechaPrincipal => {
+                const index = window.fechasAdicionales[fechaPrincipal].indexOf(fechaEnEdicion);
+                if (index !== -1) {
+                    window.fechasAdicionales[fechaPrincipal][index] = fechaFormateada;
+                }
+            });
+        }
+        
+        // Cerrar el modal
+        cerrarModalEdicion();
+        
+    } catch (error) {
+        console.error('Error al guardar la edición:', error);
+        alert('Hubo un error al guardar los cambios. Por favor, intenta de nuevo.');
+    }
 }
 
 function actualizarVisualizacionMovimiento(fechaAntigua, movimientoNuevo) {
-    // Actualizar la fecha en el elemento visual
-    const elementos = document.querySelectorAll('.fecha-adicional');
-    elementos.forEach(elemento => {
-        const fechaSpan = elemento.querySelector('span');
-        if (fechaSpan && fechaSpan.textContent === fechaAntigua) {
-            fechaSpan.textContent = movimientoNuevo.fecha;
-            // Actualizar el onclick del botón de edición
-            const botonEditar = elemento.querySelector('.btn-editar');
-            if (botonEditar) {
-                botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
+    try {
+        // Actualizar la fecha en el elemento visual
+        const elementos = document.querySelectorAll('.fecha-adicional');
+        elementos.forEach(elemento => {
+            const fechaSpan = elemento.querySelector('span');
+            if (fechaSpan && fechaSpan.textContent === fechaAntigua) {
+                fechaSpan.textContent = movimientoNuevo.fecha;
+                
+                // Actualizar el onclick del botón de edición
+                const botonEditar = elemento.querySelector('.btn-editar');
+                if (botonEditar) {
+                    botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
+                }
             }
-        }
-    });
-}
-
-function configureAwesompleteEdit() {
-    const tipoMovimientoInput = document.getElementById('editTipoMovimiento');
-    const tipoSelect = document.getElementById('editTipoSelect');
-    
-    if (tipoMovimientoInput && tipoSelect) {
-        new Awesomplete(tipoMovimientoInput, {
-            list: [],
-            minChars: 0
         });
         
-        // Actualizar la lista cuando cambie el tipo
-        tipoSelect.addEventListener('change', async () => {
-            const tipo = tipoSelect.value;
-            try {
-                const response = await fetch(`/api/tipos_movimiento/${tipo}`);
-                if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
-                const tipos = await response.json();
-                tipoMovimientoInput._awesomplete.list = tipos;
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        });
+        // Actualizar el contador y la explicación si es necesario
+        if (typeof actualizarContadorMovimientos === 'function') {
+            actualizarContadorMovimientos();
+        }
+        
+    } catch (error) {
+        console.error('Error al actualizar la visualización:', error);
     }
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-    // Cerrar el modal cuando se hace clic en la X
+    // Configurar el botón de cierre del modal
     const closeBtn = document.querySelector('#modalEdicion .close');
     if (closeBtn) {
         closeBtn.onclick = cerrarModalEdicion;
     }
-    
-    // Cerrar el modal cuando se hace clic fuera de él
+
+    // Configurar evento de cambio de tipo para cargar tipos de movimiento
+    const tipoSelect = document.getElementById('editTipoSelect');
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', function() {
+            cargarTiposMovimiento(this.value);
+        });
+    }
+
+    // Cerrar modal al hacer clic fuera
     window.onclick = function(event) {
         const modal = document.getElementById('modalEdicion');
         if (event.target === modal) {
