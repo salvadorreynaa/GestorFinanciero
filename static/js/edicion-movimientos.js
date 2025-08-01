@@ -218,12 +218,16 @@ function guardarEdicion() {
     try {
         // Obtener los valores editados
         const editForm = document.getElementById('formEdicion');
-        const tipo = editForm.querySelector('#editTipoSelect').value;
-        const tipoMovimiento = editForm.querySelector('#editTipoMovimiento').value;
-        const empresa = editForm.querySelector('#editEmpresa').value;
-        const monto = editForm.querySelector('#editMonto').value;
-        const descripcion = editForm.querySelector('#editDescripcion').value;
-        const fecha = editForm.querySelector('#editFecha').value;
+        if (!editForm) {
+            throw new Error('No se encontró el formulario de edición');
+        }
+
+        const tipo = editForm.querySelector('#editTipoSelect')?.value;
+        const tipoMovimiento = editForm.querySelector('#editTipoMovimiento')?.value;
+        const empresa = editForm.querySelector('#editEmpresa')?.value;
+        const monto = editForm.querySelector('#editMonto')?.value;
+        const descripcion = editForm.querySelector('#editDescripcion')?.value;
+        const fecha = editForm.querySelector('#editFecha')?.value;
         
         // Validar campos requeridos
         if (!tipo || !tipoMovimiento || !empresa || !monto || !descripcion || !fecha) {
@@ -234,32 +238,6 @@ function guardarEdicion() {
         // Convertir la fecha de YYYY-MM-DD a DD/MM/YYYY
         const [anio, mes, dia] = fecha.split('-');
         const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
-
-        // Actualizar el formulario principal
-        const formPrincipal = document.getElementById('formulario');
-        if (formPrincipal) {
-            // Usar optional chaining para evitar errores si algún elemento no existe
-            const tipoSelect = formPrincipal.querySelector('select[name="tipo"]');
-            const tipoMovimientoInput = formPrincipal.querySelector('input[name="tipo_movimiento"]');
-            const empresaSelect = formPrincipal.querySelector('select[name="empresa"]');
-            const montoInput = formPrincipal.querySelector('input[name="monto"]');
-            const descripcionInput = formPrincipal.querySelector('input[name="descripcion"]');
-            
-            // Actualizar solo si los elementos existen
-            if (tipoSelect) tipoSelect.value = tipo;
-            if (tipoMovimientoInput) tipoMovimientoInput.value = tipoMovimiento;
-            if (empresaSelect) empresaSelect.value = empresa;
-            if (montoInput) montoInput.value = monto;
-            if (descripcionInput) descripcionInput.value = descripcion;
-            
-            // Actualizar los campos ocultos de mes y año si existen
-            const mesInput = formPrincipal.querySelector('input[name="mes"]');
-            const anioInput = formPrincipal.querySelector('input[name="año"]');
-            if (mesInput && anioInput && mes && anio) {
-                mesInput.value = parseInt(mes);
-                anioInput.value = anio;
-            }
-        }
         
         // Actualizar la visualización
         actualizarVisualizacionMovimiento(fechaEnEdicion, {
@@ -297,49 +275,67 @@ function actualizarVisualizacionMovimiento(fechaAntigua, movimientoNuevo) {
             return;
         }
 
-        // Actualizar la fecha en el elemento visual
+        // Encontrar el elemento específico que se está editando
+        let elementoEditado = null;
         const elementos = document.querySelectorAll('.fecha-adicional');
-        let actualizado = false;
-
+        
         elementos.forEach(elemento => {
             const fechaSpan = elemento.querySelector('span');
-            if (fechaSpan && fechaSpan.textContent === fechaAntigua) {
-                // Actualizar la fecha
+            const botonEditar = elemento.querySelector('.btn-editar');
+            
+            // Verificar si este es el elemento que se está editando actualmente
+            if (botonEditar && botonEditar.matches(':focus')) {
+                elementoEditado = elemento;
+            }
+        });
+
+        // Si encontramos el elemento específico, actualizarlo
+        if (elementoEditado) {
+            const fechaSpan = elementoEditado.querySelector('span');
+            if (fechaSpan) {
                 fechaSpan.textContent = movimientoNuevo.fecha;
-                actualizado = true;
                 
-                // Actualizar el onclick del botón de edición
-                const botonEditar = elemento.querySelector('.btn-editar');
+                // Actualizar el botón de edición
+                const botonEditar = elementoEditado.querySelector('.btn-editar');
                 if (botonEditar) {
                     botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
                 }
             }
-        });
 
-        // Si no se encontró la fecha en los elementos adicionales, buscar en la tabla
-        const tablaMovimientos = document.querySelector('table');
-        if (tablaMovimientos) {
-            const filas = tablaMovimientos.querySelectorAll('tr');
-            filas.forEach(fila => {
-                const celdaFecha = fila.querySelector('td:nth-child(1)'); // Primera columna (fecha)
-                if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
-                    actualizado = true;
-                    // Actualizar cada celda con la nueva información
-                    try {
-                        const celdas = fila.querySelectorAll('td');
-                        if (celdas.length >= 6) {
-                            celdas[0].textContent = movimientoNuevo.fecha || celdas[0].textContent; // Fecha
-                            celdas[1].textContent = movimientoNuevo.empresa || celdas[1].textContent; // Empresa
-                            celdas[2].textContent = movimientoNuevo.descripcion || celdas[2].textContent; // Descripción
-                            celdas[3].textContent = movimientoNuevo.tipo || celdas[3].textContent; // Tipo
-                            celdas[4].textContent = movimientoNuevo.tipoMovimiento || celdas[4].textContent; // Tipo de Movimiento
-                            celdas[5].textContent = movimientoNuevo.monto || celdas[5].textContent; // Monto
+            // Buscar y actualizar la fila correspondiente en la tabla
+            const tablaMovimientos = document.querySelector('table');
+            if (tablaMovimientos) {
+                // Obtener el índice del elemento editado entre sus hermanos
+                const elementosAdicionales = Array.from(elementos);
+                const indiceElemento = elementosAdicionales.indexOf(elementoEditado);
+                
+                // Buscar la fila correspondiente en la tabla
+                const filas = tablaMovimientos.querySelectorAll('tr');
+                filas.forEach((fila, indice) => {
+                    const celdaFecha = fila.querySelector('td:nth-child(1)');
+                    if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
+                        // Verificar si esta es la fila correcta comparando índices
+                        const filaCorrespondiente = Array.from(filas).indexOf(fila) === indiceElemento;
+                        if (filaCorrespondiente) {
+                            try {
+                                const celdas = fila.querySelectorAll('td');
+                                if (celdas.length >= 6) {
+                                    celdas[0].textContent = movimientoNuevo.fecha;
+                                    celdas[1].textContent = movimientoNuevo.empresa;
+                                    celdas[2].textContent = movimientoNuevo.descripcion;
+                                    celdas[3].textContent = movimientoNuevo.tipo;
+                                    celdas[4].textContent = movimientoNuevo.tipoMovimiento;
+                                    celdas[5].textContent = movimientoNuevo.monto;
+                                }
+                            } catch (err) {
+                                console.error('Error al actualizar celdas de la tabla:', err);
+                            }
                         }
-                    } catch (err) {
-                        console.error('Error al actualizar celdas de la tabla:', err);
                     }
-                }
-            });
+                });
+            }
+        } else {
+            console.warn('No se encontró el elemento específico a editar');
         }
 
         if (!actualizado) {
