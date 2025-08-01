@@ -3,7 +3,7 @@ let fechaEnEdicion = null;
 let movimientoEnEdicion = null;
 
 // Función para cargar tipos de movimiento
-async function cargarTiposMovimiento(tipo) {
+async function cargarTiposMovimiento(tipo, valorSeleccionado = null) {
     try {
         // Asegurarse de que hay un tipo válido
         if (!tipo) {
@@ -33,6 +33,11 @@ async function cargarTiposMovimiento(tipo) {
                 tipoMovimientoInput.awesomplete.destroy();
             }
 
+            // Si hay un valor seleccionado, establecerlo
+            if (valorSeleccionado) {
+                tipoMovimientoInput.value = valorSeleccionado;
+            }
+
             // Crear una nueva instancia de Awesomplete
             const awesomplete = new Awesomplete(tipoMovimientoInput, {
                 list: tipos,
@@ -40,11 +45,9 @@ async function cargarTiposMovimiento(tipo) {
                 autoFirst: true
             });
 
-            // Hacer el input readonly y manejarlo con clicks
-            tipoMovimientoInput.setAttribute('readonly', true);
-            
-            // Mostrar la lista al hacer click
+            // Configurar el input para manejo de selección
             tipoMovimientoInput.addEventListener('click', function() {
+                this.select(); // Seleccionar todo el texto al hacer click
                 if (awesomplete.ul.childNodes.length === 0) {
                     awesomplete.evaluate();
                 }
@@ -53,9 +56,6 @@ async function cargarTiposMovimiento(tipo) {
 
             // Guardar la instancia para uso futuro
             tipoMovimientoInput.awesomplete = awesomplete;
-
-            // Focus en el input para mostrar las opciones
-            tipoMovimientoInput.focus();
         }
     } catch (error) {
         console.error('Error al cargar tipos de movimiento:', error);
@@ -190,7 +190,7 @@ function editarFecha(event, fecha) {
             editForm.querySelector('#editFecha').value = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
 
             // Cargar tipos de movimiento para el tipo seleccionado
-            cargarTiposMovimiento(tipo);
+            cargarTiposMovimiento(tipo, tipoMovimiento);
         }
 
         // Cargar empresas
@@ -239,24 +239,42 @@ function guardarEdicion() {
         const [anio, mes, dia] = fecha.split('-');
         const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
         
-        const movimientoActualizado = {
-            tipo,
-            tipoMovimiento,
-            empresa,
-            monto,
-            descripcion,
-            fecha: fechaFormateada
-        };
-
-        // Verificar si es un movimiento temporal
-        if (window.movimientosTemporales && window.movimientosTemporales[fechaEnEdicion]) {
-            // Actualizar movimiento temporal
-            actualizarVisualizacionTemporal(fechaEnEdicion, movimientoActualizado);
-        } else {
-            // Actualizar movimiento normal
-            actualizarVisualizacionMovimiento(fechaEnEdicion, movimientoActualizado);
+        // Actualizar los valores en el formulario principal
+        const formPrincipal = document.getElementById('formulario');
+        if (formPrincipal) {
+            formPrincipal.querySelector('select[name="tipo"]').value = tipo;
+            formPrincipal.querySelector('input[name="tipo_movimiento"]').value = tipoMovimiento;
+            formPrincipal.querySelector('select[name="empresa"]').value = empresa;
+            formPrincipal.querySelector('input[name="descripcion"]').value = descripcion;
+            formPrincipal.querySelector('input[name="monto"]').value = monto;
+            
+            // Actualizar los campos ocultos de mes y año si existen
+            const mesInput = formPrincipal.querySelector('input[name="mes"]');
+            const anioInput = formPrincipal.querySelector('input[name="año"]');
+            if (mesInput && anioInput) {
+                mesInput.value = parseInt(mes);
+                anioInput.value = anio;
+            }
         }
-        
+
+        // Encontrar y actualizar el elemento visual
+        const elementos = document.querySelectorAll('.fecha-adicional span');
+        elementos.forEach(span => {
+            if (span.textContent === fechaEnEdicion) {
+                const elementoFecha = span.closest('.fecha-adicional');
+                if (elementoFecha) {
+                    span.textContent = fechaFormateada;
+                    // Si hay un elemento para mostrar detalles, actualizarlo
+                    const detalles = elementoFecha.querySelector('.detalles');
+                    if (detalles) {
+                        detalles.textContent = `${empresa} - ${tipoMovimiento} - $${monto}`;
+                    }
+                    // Marcar como editado
+                    elementoFecha.classList.add('editado');
+                }
+            }
+        });
+
         // Cerrar el modal
         cerrarModalEdicion();
         
