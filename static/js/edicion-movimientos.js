@@ -2,6 +2,66 @@
 let fechaEnEdicion = null;
 let movimientoEnEdicion = null;
 
+// Asegurarse de que el documento está cargado
+document.addEventListener('DOMContentLoaded', () => {
+    // Agregar el modal al body si no existe
+    if (!document.getElementById('modalEdicion')) {
+        const modalHTML = `
+            <div id="modalEdicion" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Editar Movimiento</h2>
+                        <span class="close">&times;</span>
+                    </div>
+                    <form id="formEdicion">
+                        <div class="form-row">
+                            <label>
+                                Tipo:
+                                <select id="editTipoSelect" name="tipo" required>
+                                    <option value="ingreso">Ingreso</option>
+                                    <option value="egreso">Egreso</option>
+                                </select>
+                            </label>
+                            <label>
+                                Tipo de movimiento:
+                                <input type="text" id="editTipoMovimiento" class="awesomplete" name="tipo_movimiento" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Descripción:
+                                <input type="text" id="editDescripcion" name="descripcion" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Fecha:
+                                <input type="date" id="editFecha" name="fecha" required>
+                            </label>
+                            <label>
+                                Monto:
+                                <input type="number" id="editMonto" name="monto" step="0.01" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Empresa:
+                                <select id="editEmpresa" name="empresa" required>
+                                    <option value="" disabled selected>Seleccionar...</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-row buttons-row">
+                            <button type="button" onclick="guardarEdicion()" class="btn-guardar">Guardar Cambios</button>
+                            <button type="button" onclick="cerrarModalEdicion()" class="btn-cancelar">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+});
+
 function editarFecha(event, fecha) {
     event.preventDefault();
     event.stopPropagation();
@@ -10,11 +70,11 @@ function editarFecha(event, fecha) {
     const modal = document.getElementById('modalEdicion');
     
     // Obtener los valores actuales del formulario principal
-    const tipo = document.getElementById('tipo').value;
-    const tipoMovimiento = document.getElementById('input-tipo-movimiento').value;
-    const descripcion = document.getElementById('descripcion').value;
-    const monto = document.getElementById('monto').value;
-    const empresa = document.getElementById('empresa').value;
+    const tipo = document.querySelector('select[name="tipo"]').value;
+    const tipoMovimiento = document.querySelector('input[name="tipo_movimiento"]').value;
+    const descripcion = document.querySelector('input[name="descripcion"]').value;
+    const monto = document.querySelector('input[name="monto"]').value;
+    const empresa = document.querySelector('select[name="empresa"]').value;
     
     // Establecer los valores en el formulario de edición
     document.getElementById('editTipoSelect').value = tipo;
