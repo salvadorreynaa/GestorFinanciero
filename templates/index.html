@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sistema de gestión financiera Vaya Valla">
+  <meta name="description" content="Sistema de  <script src="{{ url_for('static', filename='js/fechas-adicionales.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>estión financiera Vaya Valla">
   <title>Finanzas Vaya Valla</title>
   <!-- Precargar recursos críticos -->
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
@@ -126,6 +128,7 @@
           <input type="month" id="mes-fin-multiple" name="mes_fin_multiple">
         </label>
         <div id="explicacion-multiples" style="font-size:0.95em;color:#555;margin-top:6px;"></div>
+        <div id="fechas-container" class="fechas-multiples"></div>
       </div>
     </div>
 

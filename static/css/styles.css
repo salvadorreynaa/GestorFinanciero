@@ -6,6 +6,59 @@
   vertical-align: middle;
 }
 /* ==== Textos explicativos de movimientos automáticos en edición ==== */
+
+.fechas-multiples {
+  margin-top: 10px;
+}
+
+.fecha-grupo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.fecha-principal {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.fecha-adicional {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+  margin-top: 4px;
+}
+
+.btn-agregar {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 0 8px;
+  margin-left: 8px;
+}
+
+.btn-agregar:hover {
+  color: #004499;
+}
+
+.btn-editar {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 8px;
+}
+
+.btn-editar:hover {
+  color: #333;
+}
 #editar-recordatorio-inicio,
 #editar-explicacion-multiples {
   font-size: 5em !important;

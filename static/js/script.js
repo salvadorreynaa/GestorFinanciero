@@ -592,15 +592,18 @@ document.addEventListener("DOMContentLoaded", () => {
                  (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
 
     // Construir la explicación de las fechas
-    let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:\n`;
+    let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:`;
     let mesActual = mesInicio;
     let anioActual = parseInt(anioI);
     let fechas = [];
+    window.fechasAdicionales = {};
 
     // Generar todas las fechas
     for (let i = 0; i < meses; i++) {
       const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
-      fechas.push(`${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`);
+      const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
+      fechas.push(fecha);
+      window.fechasAdicionales[fecha] = [];
       
       mesActual++;
       if (mesActual >= 12) {
@@ -608,6 +611,33 @@ document.addEventListener("DOMContentLoaded", () => {
         anioActual++;
       }
     }
+
+    // Actualizar el contenedor de fechas
+    const container = document.getElementById('fechas-container');
+    container.innerHTML = '';
+    
+    fechas.forEach(fecha => {
+      const grupo = document.createElement('div');
+      grupo.className = 'fecha-grupo';
+      
+      const fechaPrincipal = document.createElement('div');
+      fechaPrincipal.className = 'fecha-principal';
+      fechaPrincipal.innerHTML = `
+        <span>${fecha}</span>
+        <button class="btn-agregar" onclick="agregarFechaAdicional('${fecha}')">+</button>
+        <button class="btn-editar" onclick="editarFecha('${fecha}')">✎</button>
+      `;
+      
+      grupo.appendChild(fechaPrincipal);
+      
+      // Contenedor para fechas adicionales
+      const adicionales = document.createElement('div');
+      adicionales.className = 'fechas-adicionales';
+      adicionales.id = `adicionales-${fecha.replace(/\//g, '-')}`;
+      grupo.appendChild(adicionales);
+      
+      container.appendChild(grupo);
+    });
 
     explicacion += fechas.join(", ");
     
