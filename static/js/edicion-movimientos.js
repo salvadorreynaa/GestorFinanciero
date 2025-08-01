@@ -275,67 +275,48 @@ function actualizarVisualizacionMovimiento(fechaAntigua, movimientoNuevo) {
             return;
         }
 
-        // Encontrar el elemento específico que se está editando
-        let elementoEditado = null;
+        // Encontrar todos los elementos con la fecha antigua
         const elementos = document.querySelectorAll('.fecha-adicional');
-        
+        let actualizado = false;
+
         elementos.forEach(elemento => {
             const fechaSpan = elemento.querySelector('span');
-            const botonEditar = elemento.querySelector('.btn-editar');
-            
-            // Verificar si este es el elemento que se está editando actualmente
-            if (botonEditar && botonEditar.matches(':focus')) {
-                elementoEditado = elemento;
-            }
-        });
-
-        // Si encontramos el elemento específico, actualizarlo
-        if (elementoEditado) {
-            const fechaSpan = elementoEditado.querySelector('span');
-            if (fechaSpan) {
+            if (fechaSpan && fechaSpan.textContent === fechaAntigua) {
+                actualizado = true;
+                // Actualizar la fecha
                 fechaSpan.textContent = movimientoNuevo.fecha;
                 
                 // Actualizar el botón de edición
-                const botonEditar = elementoEditado.querySelector('.btn-editar');
+                const botonEditar = elemento.querySelector('.btn-editar');
                 if (botonEditar) {
                     botonEditar.setAttribute('onclick', `editarFecha(event, '${movimientoNuevo.fecha}')`);
                 }
             }
+        });
 
-            // Buscar y actualizar la fila correspondiente en la tabla
-            const tablaMovimientos = document.querySelector('table');
-            if (tablaMovimientos) {
-                // Obtener el índice del elemento editado entre sus hermanos
-                const elementosAdicionales = Array.from(elementos);
-                const indiceElemento = elementosAdicionales.indexOf(elementoEditado);
-                
-                // Buscar la fila correspondiente en la tabla
-                const filas = tablaMovimientos.querySelectorAll('tr');
-                filas.forEach((fila, indice) => {
-                    const celdaFecha = fila.querySelector('td:nth-child(1)');
-                    if (celdaFecha && celdaFecha.textContent.includes(fechaAntigua)) {
-                        // Verificar si esta es la fila correcta comparando índices
-                        const filaCorrespondiente = Array.from(filas).indexOf(fila) === indiceElemento;
-                        if (filaCorrespondiente) {
-                            try {
-                                const celdas = fila.querySelectorAll('td');
-                                if (celdas.length >= 6) {
-                                    celdas[0].textContent = movimientoNuevo.fecha;
-                                    celdas[1].textContent = movimientoNuevo.empresa;
-                                    celdas[2].textContent = movimientoNuevo.descripcion;
-                                    celdas[3].textContent = movimientoNuevo.tipo;
-                                    celdas[4].textContent = movimientoNuevo.tipoMovimiento;
-                                    celdas[5].textContent = movimientoNuevo.monto;
-                                }
-                            } catch (err) {
-                                console.error('Error al actualizar celdas de la tabla:', err);
-                            }
+        // Actualizar en la tabla
+        const tablaMovimientos = document.querySelector('table');
+        if (tablaMovimientos) {
+            const filas = tablaMovimientos.querySelectorAll('tr');
+            filas.forEach(fila => {
+                const celdaFecha = fila.querySelector('td:nth-child(1)');
+                if (celdaFecha && celdaFecha.textContent.trim() === fechaAntigua) {
+                    actualizado = true;
+                    try {
+                        const celdas = fila.querySelectorAll('td');
+                        if (celdas.length >= 6) {
+                            celdas[0].textContent = movimientoNuevo.fecha;
+                            celdas[1].textContent = movimientoNuevo.empresa;
+                            celdas[2].textContent = movimientoNuevo.descripcion;
+                            celdas[3].textContent = movimientoNuevo.tipo;
+                            celdas[4].textContent = movimientoNuevo.tipoMovimiento;
+                            celdas[5].textContent = movimientoNuevo.monto;
                         }
+                    } catch (err) {
+                        console.error('Error al actualizar celdas de la tabla:', err);
                     }
-                });
-            }
-        } else {
-            console.warn('No se encontró el elemento específico a editar');
+                }
+            });
         }
 
         if (!actualizado) {
