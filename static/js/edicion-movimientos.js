@@ -17,7 +17,7 @@ async function cargarTiposMovimiento(tipo) {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            credentials: 'same-origin' // Importante para enviar las cookies de sesión
+            credentials: 'same-origin'
         });
 
         if (!response.ok) {
@@ -28,15 +28,34 @@ async function cargarTiposMovimiento(tipo) {
         const tipoMovimientoInput = document.getElementById('editTipoMovimiento');
         
         if (tipoMovimientoInput) {
-            // Inicializar o actualizar Awesomplete
-            if (!tipoMovimientoInput.awesomplete) {
-                new Awesomplete(tipoMovimientoInput, {
-                    list: tipos,
-                    minChars: 0
-                });
-            } else {
-                tipoMovimientoInput.awesomplete.list = tipos;
+            // Destruir la instancia anterior de Awesomplete si existe
+            if (tipoMovimientoInput.awesomplete) {
+                tipoMovimientoInput.awesomplete.destroy();
             }
+
+            // Crear una nueva instancia de Awesomplete
+            const awesomplete = new Awesomplete(tipoMovimientoInput, {
+                list: tipos,
+                minChars: 0,
+                autoFirst: true
+            });
+
+            // Hacer el input readonly y manejarlo con clicks
+            tipoMovimientoInput.setAttribute('readonly', true);
+            
+            // Mostrar la lista al hacer click
+            tipoMovimientoInput.addEventListener('click', function() {
+                if (awesomplete.ul.childNodes.length === 0) {
+                    awesomplete.evaluate();
+                }
+                awesomplete.open();
+            });
+
+            // Guardar la instancia para uso futuro
+            tipoMovimientoInput.awesomplete = awesomplete;
+
+            // Focus en el input para mostrar las opciones
+            tipoMovimientoInput.focus();
         }
     } catch (error) {
         console.error('Error al cargar tipos de movimiento:', error);
