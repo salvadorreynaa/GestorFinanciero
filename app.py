@@ -153,6 +153,18 @@ def contactos():
 def movimientos():
     return render_template('movimientos.html')
 
+# Endpoint para obtener tipos de movimiento
+@app.route('/api/tipos_movimiento/<tipo>', methods=['GET'])
+@api_login_required
+def get_tipos_movimiento(tipo):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT nombre FROM tipos_movimiento WHERE tipo = %s ORDER BY nombre;', (tipo,))
+    tipos = [row[0] for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(tipos)
+
 @app.route('/agregar', methods=['POST'])
 def agregar():
     descripcion = request.form['descripcion']

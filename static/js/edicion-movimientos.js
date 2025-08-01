@@ -5,9 +5,24 @@ let movimientoEnEdicion = null;
 // Función para cargar tipos de movimiento
 async function cargarTiposMovimiento(tipo) {
     try {
-        const baseUrl = window.location.origin;
-        const response = await fetch(`${baseUrl}/api/tipos_movimiento/${tipo}`);
-        if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
+        // Asegurarse de que hay un tipo válido
+        if (!tipo) {
+            console.error('Tipo no especificado');
+            return;
+        }
+
+        const response = await fetch(`/api/tipos_movimiento/${tipo}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin' // Importante para enviar las cookies de sesión
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al cargar tipos de movimiento: ${response.status}`);
+        }
         
         const tipos = await response.json();
         const tipoMovimientoInput = document.getElementById('editTipoMovimiento');
