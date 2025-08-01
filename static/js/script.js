@@ -588,14 +588,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const diaAjustadoFin = ajustarFecha(parseInt(anioFin), mesFinal, diaOriginal);
     const fechaFin = new Date(parseInt(anioFin), mesFinal, diaAjustadoFin);
 
-    const meses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
-                 (fechaFin.getMonth() - fechaInicio.getMonth()) + 1;
-
-    // Construir la explicación de las fechas
-    let explicacion = `Se crearán ${meses} movimientos en las siguientes fechas:`;
+    let fechas = [];
     let mesActual = mesInicio;
     let anioActual = parseInt(anioI);
-    let fechas = [];
+
+    // Generar todas las fechas principales
+    for (let i = 0; i < ((fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + 
+                        (fechaFin.getMonth() - fechaInicio.getMonth()) + 1); i++) {
+      const diaAjustado = ajustarFecha(anioActual, mesActual, diaOriginal);
+      const fecha = `${diaAjustado}/${(mesActual + 1).toString().padStart(2, '0')}/${anioActual}`;
+      fechas.push(fecha);
+      
+      mesActual++;
+      if (mesActual >= 12) {
+        mesActual = 0;
+        anioActual++;
+      }
+    }
+
+    // Calcular el total de movimientos (principales + adicionales)
+    let totalMovimientos = fechas.length;
+    Object.values(window.fechasAdicionales || {}).forEach(fechasAdicionales => {
+      totalMovimientos += fechasAdicionales.length;
+    });
+
+    // Construir la explicación de las fechas
+    let explicacion = `Se crearán ${totalMovimientos} movimientos en las siguientes fechas:`;
     window.fechasAdicionales = {};
 
     // Generar todas las fechas
@@ -746,8 +764,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     } else {
       // Movimientos múltiples
-      const [anioInicio, mesInicio, diaInicio] = fecha.split('-');
-      const [anioFin, mesFin] = elements.mesFinMultiple.value.split('-');
+      // Obtener todas las fechas (principales y adicionales)
+      const todasLasFechas = obtenerTodasLasFechas();
+      
+      // Crear una promesa para cada fecha
+      const promesas = todasLasFechas.map(fecha => {
+        // Convertir el formato de fecha DD/MM/YYYY a YYYY-MM-DD
+        const [dia, mes, anio] = fecha.split('/');
+        const fechaFormateada = `${anio}-${mes}-${dia}`;
+        return crearMovimiento(fechaFormateada);
+      });
+
+      // Esperar a que todos los movimientos se guarden
+      Promise.all(promesas)
+        .then(() => {
+          elements.formulario?.reset();
+          mostrarToast(`✅ Se guardaron ${todasLasFechas.length} movimientos correctamente.`);
+          // Limpiar las fechas adicionales
+          window.fechasAdicionales = {};
+          // Actualizar la visualización
+          if (elements.activarMultiples?.checked) actualizarExplicacionMultiples();
+        })
+        .catch(error => {
+          console.error('Error al guardar movimientos:', error);
+          mostrarToast("❌ Error al guardar los movimientos. Por favor, intenta de nuevo.");
+        })
+        .finally(() => {
+          state.guardando = false;
+        });
+      return; // Importante: salir aquí para no ejecutar el código siguiente
       
       const movimientos = [];
       let mesActual = parseInt(mesInicio) - 1;  // 0-based
