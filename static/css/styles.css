@@ -59,6 +59,45 @@
 .btn-editar:hover {
   color: #333;
 }
+
+.fecha-selector {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 5px;
+  margin-left: 20px;
+  display: none;
+}
+
+.fecha-selector.active {
+  display: block;
+}
+
+.fecha-selector input[type="date"] {
+  margin-right: 10px;
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.fecha-selector button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.fecha-selector button.cancelar {
+  background-color: #6c757d;
+}
+
+.fecha-selector button:hover {
+  opacity: 0.9;
+}
 #editar-recordatorio-inicio,
 #editar-explicacion-multiples {
   font-size: 5em !important;

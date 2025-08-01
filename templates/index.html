@@ -3,37 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sistema de  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <meta name="description" content="Sistema de gestión financiera Vaya Valla">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <title>Vaya Valla - Gestión Financiera</title>
   <script>
     // Funciones para manejar fechas adicionales
-    function agregarFechaAdicional(fechaPrincipal) {
-      const [dia, mes, anio] = fechaPrincipal.split('/');
-      const mesAnio = `${anio}-${mes.padStart(2, '0')}`;
+    function agregarFechaAdicional(event, fechaPrincipal) {
+      event.preventDefault();
+      event.stopPropagation();
       
-      // Crear modal para seleccionar fecha
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.style.display = 'flex';
-      modal.innerHTML = `
-          <div class="modal-content">
-              <h3>Agregar fecha adicional</h3>
-              <p>Selecciona una fecha para ${mes}/${anio}:</p>
-              <input type="date" id="fecha-adicional-input" 
-                     min="${anio}-${mes}-01" 
-                     max="${anio}-${mes}-31" 
-                     value="${anio}-${mes}-${dia}">
-              <div class="modal-buttons">
-                  <button onclick="confirmarFechaAdicional('${fechaPrincipal}')">Agregar</button>
-                  <button onclick="this.closest('.modal').remove()">Cancelar</button>
-              </div>
-          </div>
-      `;
-      document.body.appendChild(modal);
+      const [dia, mes, anio] = fechaPrincipal.split('/');
+      
+      // Buscar o crear el contenedor del selector de fecha
+      let selectorContainer = document.getElementById(`selector-${fechaPrincipal.replace(/\//g, '-')}`);
+      
+      if (!selectorContainer) {
+        // Si no existe, crear el selector de fecha
+        selectorContainer = document.createElement('div');
+        selectorContainer.id = `selector-${fechaPrincipal.replace(/\//g, '-')}`;
+        selectorContainer.className = 'fecha-selector';
+        selectorContainer.innerHTML = `
+          <input type="date" 
+                 id="fecha-adicional-input-${fechaPrincipal.replace(/\//g, '-')}" 
+                 min="${anio}-${mes.padStart(2, '0')}-01" 
+                 max="${anio}-${mes.padStart(2, '0')}-31" 
+                 value="${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}">
+          <button type="button" onclick="confirmarFechaAdicional(event, '${fechaPrincipal}')">Agregar</button>
+          <button type="button" class="cancelar" onclick="cerrarSelector(event, '${fechaPrincipal}')">Cancelar</button>
+        `;
+        
+        // Insertar el selector después del botón +
+        const fechaPrincipalDiv = event.target.closest('.fecha-principal');
+        fechaPrincipalDiv.after(selectorContainer);
+      }
+      
+      // Mostrar el selector
+      selectorContainer.classList.add('active');
     }
 
     // Función para confirmar y agregar la fecha adicional
-    function confirmarFechaAdicional(fechaPrincipal) {
-      const input = document.getElementById('fecha-adicional-input');
+    function confirmarFechaAdicional(event, fechaPrincipal) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const input = document.getElementById(`fecha-adicional-input-${fechaPrincipal.replace(/\//g, '-')}`);
       const fechaSeleccionada = input.value;
       const [anio, mes, dia] = fechaSeleccionada.split('-');
       const nuevaFecha = `${dia}/${mes}/${anio}`;
@@ -50,17 +63,29 @@
       nuevaFechaDiv.className = 'fecha-adicional';
       nuevaFechaDiv.innerHTML = `
           <span>${nuevaFecha}</span>
-          <button class="btn-editar" onclick="editarFecha('${nuevaFecha}')">✎</button>
+          <button type="button" class="btn-editar" onclick="editarFecha(event, '${nuevaFecha}')">✎</button>
       `;
       contenedorAdicionales.appendChild(nuevaFechaDiv);
       
-      // Cerrar el modal
-      document.querySelector('.modal').remove();
+      // Cerrar el selector de fecha
+      cerrarSelector(event, fechaPrincipal);
     }
 
     // Función para editar una fecha (implementaremos esto en la siguiente fase)
-    function editarFecha(fecha) {
+    function editarFecha(event, fecha) {
+      event.preventDefault();
+      event.stopPropagation();
       console.log('Editar fecha:', fecha);
+    }
+
+    // Función para cerrar el selector de fecha
+    function cerrarSelector(event, fechaPrincipal) {
+      event.preventDefault();
+      event.stopPropagation();
+      const selector = document.getElementById(`selector-${fechaPrincipal.replace(/\//g, '-')}`);
+      if (selector) {
+        selector.classList.remove('active');
+      }
     }
   </script>
 </body>estión financiera Vaya Valla">
