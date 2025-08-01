@@ -239,24 +239,22 @@ function guardarEdicion() {
         const [anio, mes, dia] = fecha.split('-');
         const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
         
-        // Actualizar la visualización
-        actualizarVisualizacionMovimiento(fechaEnEdicion, {
+        const movimientoActualizado = {
             tipo,
             tipoMovimiento,
             empresa,
             monto,
             descripcion,
             fecha: fechaFormateada
-        });
-        
-        // Actualizar en el arreglo de fechas adicionales si es una fecha adicional
-        if (window.fechasAdicionales) {
-            Object.keys(window.fechasAdicionales).forEach(fechaPrincipal => {
-                const index = window.fechasAdicionales[fechaPrincipal].indexOf(fechaEnEdicion);
-                if (index !== -1) {
-                    window.fechasAdicionales[fechaPrincipal][index] = fechaFormateada;
-                }
-            });
+        };
+
+        // Verificar si es un movimiento temporal
+        if (window.movimientosTemporales && window.movimientosTemporales[fechaEnEdicion]) {
+            // Actualizar movimiento temporal
+            actualizarVisualizacionTemporal(fechaEnEdicion, movimientoActualizado);
+        } else {
+            // Actualizar movimiento normal
+            actualizarVisualizacionMovimiento(fechaEnEdicion, movimientoActualizado);
         }
         
         // Cerrar el modal

@@ -11,27 +11,70 @@
     .fecha-adicional.temporal {
       background-color: #fff3cd;
       border: 1px solid #ffeeba;
-      padding: 5px;
+      padding: 10px;
       margin: 5px 0;
       border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .fecha-adicional .btn-confirmar {
-      background-color: #28a745;
+
+    .fecha-adicional .fecha-info {
+      flex-grow: 1;
+    }
+
+    .fecha-adicional .fecha {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .fecha-adicional .detalles {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .fecha-adicional .botones {
+      display: flex;
+      gap: 5px;
+    }
+
+    .fecha-adicional.editado {
+      background-color: #d4edda;
+      border-color: #c3e6cb;
+    }
+
+    .fecha-adicional .btn-editar {
+      background-color: #007bff;
       color: white;
       border: none;
       border-radius: 3px;
       padding: 2px 6px;
-      margin-left: 5px;
       cursor: pointer;
     }
-    .fecha-adicional .btn-cancelar {
+
+    .fecha-adicional .btn-eliminar {
       background-color: #dc3545;
       color: white;
       border: none;
       border-radius: 3px;
       padding: 2px 6px;
-      margin-left: 5px;
       cursor: pointer;
+    }
+
+    #btn-guardar-todos {
+      display: none;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      margin: 10px 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #btn-guardar-todos.visible {
+      display: block;
     }
   </style>
   <title>Vaya Valla - Gestión Financiera</title>
@@ -403,6 +446,7 @@
       <ul id="lista-opciones" style="list-style:none;padding:0;margin:0 0 10px 0;"></ul>
     </div>
   </div>
+  <script src="{{ url_for('static', filename='js/movimientos-temporales.js') }}"></script>
   <script src="{{ url_for('static', filename='js/edicion-movimientos.js') }}"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
