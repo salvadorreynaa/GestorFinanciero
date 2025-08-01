@@ -67,8 +67,14 @@
       `;
       contenedorAdicionales.appendChild(nuevaFechaDiv);
       
+      // Actualizar el contador total de movimientos
+      actualizarContadorMovimientos();
+      
       // Cerrar el selector de fecha
       cerrarSelector(event, fechaPrincipal);
+      
+      // Agregar el movimiento a la tabla
+      agregarMovimientoATabla(nuevaFecha);
     }
 
     // Función para editar una fecha (implementaremos esto en la siguiente fase)
@@ -85,6 +91,47 @@
       const selector = document.getElementById(`selector-${fechaPrincipal.replace(/\//g, '-')}`);
       if (selector) {
         selector.classList.remove('active');
+      }
+    }
+
+    // Función para actualizar el contador de movimientos
+    function actualizarContadorMovimientos() {
+      const explicacionElement = document.getElementById('explicacion-multiples');
+      if (!explicacionElement) return;
+
+      // Contar movimientos principales
+      let totalMovimientos = Object.keys(window.fechasAdicionales).length;
+
+      // Contar movimientos adicionales
+      Object.values(window.fechasAdicionales).forEach(fechas => {
+        totalMovimientos += fechas.length;
+      });
+
+      // Actualizar el texto explicativo
+      const textoBase = explicacionElement.textContent;
+      const nuevoTexto = textoBase.replace(/\d+(?=\s+movimientos?)/, totalMovimientos);
+      explicacionElement.textContent = nuevoTexto;
+    }
+
+    // Función para agregar un movimiento a la tabla
+    function agregarMovimientoATabla(fecha) {
+      // Obtener los valores del formulario principal
+      const tipo = document.getElementById('tipo').value;
+      const empresa = document.getElementById('empresa').value;
+      const monto = document.getElementById('monto').value;
+
+      // Crear una nueva fila en la tabla de movimientos
+      const tabla = document.querySelector('table tbody'); // Ajusta el selector según tu tabla
+      if (tabla) {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${fecha}</td>
+          <td>${tipo}</td>
+          <td>${empresa}</td>
+          <td>${monto}</td>
+          <td>Pendiente</td>
+        `;
+        tabla.appendChild(fila);
       }
     }
   </script>

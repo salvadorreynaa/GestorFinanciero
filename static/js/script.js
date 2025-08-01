@@ -664,6 +664,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Función auxiliar para obtener el último día del mes
 
 
+  // Función para obtener todas las fechas (principales y adicionales)
+  function obtenerTodasLasFechas() {
+    const fechas = [];
+    // Primero agregamos las fechas principales
+    Object.keys(window.fechasAdicionales || {}).forEach(fechaPrincipal => {
+      fechas.push(fechaPrincipal);
+      // Luego agregamos las fechas adicionales para esta fecha principal
+      if (window.fechasAdicionales[fechaPrincipal]) {
+        fechas.push(...window.fechasAdicionales[fechaPrincipal]);
+      }
+    });
+    return fechas;
+  }
+
   elements.formulario?.addEventListener("submit", function (e) {
     e.preventDefault();
     if (state.guardando) return;
@@ -682,6 +696,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     state.guardando = true;
+
+    // Obtener todas las fechas si está activado el modo múltiple
+    let fechasAEnviar = [];
+    if (elements.activarMultiples?.checked) {
+      fechasAEnviar = obtenerTodasLasFechas();
+    } else {
+      fechasAEnviar = [fecha];
+    }
 
     // Función para crear un movimiento para una fecha específica
 
