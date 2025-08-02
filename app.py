@@ -192,10 +192,10 @@ def agregar():
     
     # Insertar tipo de movimiento si no existe
     if tipoMovimiento:
-        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', (tipoMovimiento, tipo))
+        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre, tipo) DO NOTHING RETURNING id;', (tipoMovimiento, tipo))
         tipo_id = cur.fetchone()
         if not tipo_id:
-            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s;', (tipoMovimiento,))
+            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre=%s AND tipo=%s;', (tipoMovimiento, tipo))
             tipo_id = cur.fetchone()
         tipo_id = tipo_id[0] if tipo_id else None
     else:
@@ -700,13 +700,23 @@ def api_tipos_movimiento_post():
     data = request.get_json()
     nombre = data.get('nombre')
     tipo = data.get('tipo')
+    
+    if not nombre or not tipo:
+        return jsonify({'error': 'Nombre y tipo son requeridos'}), 400
+    
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING;', (nombre, tipo))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'status': 'ok'})
+    try:
+        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre, tipo) DO NOTHING;', (nombre, tipo))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/empresas/<nombre>', methods=['DELETE'])
 def api_empresas_delete(nombre):
@@ -720,13 +730,27 @@ def api_empresas_delete(nombre):
 
 @app.route('/api/tipos_movimiento/<nombre>', methods=['DELETE'])
 def api_tipos_movimiento_delete(nombre):
+    tipo = request.args.get('tipo')  # Obtenemos el tipo de los parámetros de la URL
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM tipos_movimiento WHERE nombre=%s;', (nombre,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'status': 'ok'})
+    
+    try:
+        if tipo:
+            # Si se proporciona el tipo, borramos la combinación específica
+            cur.execute('DELETE FROM tipos_movimiento WHERE nombre=%s AND tipo=%s;', (nombre, tipo))
+        else:
+            # Si no se proporciona el tipo, borramos todas las ocurrencias del nombre
+            cur.execute('DELETE FROM tipos_movimiento WHERE nombre=%s;', (nombre,))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/empresas/<nombre>', methods=['PUT'])
 def api_empresas_rename(nombre):
