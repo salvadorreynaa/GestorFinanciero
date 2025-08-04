@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadisticas Vaya Valla</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="icon" href="../img/favicon.ico" />
+</head>
+<body>
+  <header>
+    <!-- Barra de navegación -->
+    <img src="../img/logo.png" alt="Logo" />
+    <nav>
+      <ul>
+        <li><a href="../index.html">Inicio</a></li>
+        <li><a href="movimientos.html">Movimientos</a></li>
+        <li><a href="estadisticas.html">Estadisticas</a></li>
+        <li><a href="contactos.html">Contactos</a></li>
+      </ul>
+    </nav>
+  </header>
+
+
+  <h1>Estadisticas</h1>
+
+  <div style="text-align: center; margin: 20px;">
+    <label for="filtroMes">Filtrar por mes:</label>
+    <select id="filtroMes">
+      <option value="Todos">Todos</option>
+      <option value="Enero">Enero</option>
+      <option value="Febrero">Febrero</option>
+      <option value="Marzo">Marzo</option>
+      <option value="Abril">Abril</option>
+      <option value="Mayo">Mayo</option>
+      <option value="Junio">Junio</option>
+      <option value="Julio">Julio</option>
+      <option value="Agosto">Agosto</option>
+      <option value="Septiembre">Septiembre</option>
+      <option value="Octubre">Octubre</option>
+      <option value="Noviembre">Noviembre</option>
+      <option value="Diciembre">Diciembre</option>
+    </select>
+
+    <label for="filtroAño">Año:</label>
+    <select id="filtroAño">
+      <option value="Todos">Todos</option>
+      <option value="2025">2025</option>
+      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+      <option value="2028">2028</option>
+      <option value="2029">2029</option>
+      <option value="2030">2030</option>
+    </select>
+  </div>
+
+
+    <div class="resumen-contenedor">
+    <div class="resumen-cuadro ingresos">
+      <p class="titulo">Total Ingresos</p>
+      <p id="total-ingresos" class="monto">S/ 0.00</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/3144/3144456.png" alt="Billetera" class="icono" />
+    </div>
+    <div class="resumen-cuadro egresos">
+      <p class="titulo">Total Egresos</p>
+      <p id="total-egresos" class="monto">S/ 0.00</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/925/925212.png" alt="Moneda" class="icono" />
+    </div>
+    <div class="resumen-cuadro disponible">
+      <p class="titulo">Dinero Disponible</p>
+      <p id="dinero-disponible" class="monto">S/ 0.00</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="Alcancía" class="icono" />
+    </div>
+  </div>
+
+  <div class="resumen-contenedor">
+    <div class="resumen-cuadro ingresos">
+      <div class="titulo">Dinero Cobrado</div>
+      <div class="monto" id="dinero-cobrado">S/ 0.00</div>
+      <div class="icono">
+        <img src="https://www.svgrepo.com/show/2576/money.svg" alt="Dinero Cobrado" class="icono" />
+      </div>
+    </div>
+    <div class="resumen-cuadro egresos">
+      <div class="titulo">Dinero por Cobrar</div>
+      <div class="monto" id="dinero-por-cobrar">S/ 0.00</div>
+      <div class="icono">
+        <img src="https://www.svgrepo.com/show/68741/hourglass.svg" alt="Dinero por Cobrar" class="icono" />
+      </div>
+    </div>
+    <div class="resumen-cuadro egresos">
+      <div class="titulo">Dinero por Pagar</div>
+      <div class="monto" id="dinero-por-pagar">S/ 0.00</div>
+      <div class="icono">
+        <img src="https://cdn-icons-png.flaticon.com/256/8305/8305559.png" alt="Dinero por Pagar" class="icono" />
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+    <script src="../js/estadisticas.js"></script>
+</body>
+</html>
