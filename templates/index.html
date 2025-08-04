@@ -211,65 +211,6 @@
   <!-- Fila para los botones de agregar opciones -->
 
 
-  <!-- Modal de confirmación personalizado -->
-<div id="modal-confirmar-eliminar" class="modal" style="display:none;">
-  <div class="modal-contenido" style="max-width:340px;">
-    <p id="mensaje-confirmar-eliminar" style="margin-bottom:18px;text-align:center;"></p>
-    <div style="display:flex;justify-content:center;gap:18px;">
-      <button id="btn-confirmar-si" style="background:#e53935;">Sí, eliminar</button>
-      <button id="btn-confirmar-no" style="background:#1976d2;">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal para agregar tipo de movimiento -->
-<div id="modal-agregar-tipo-movimiento" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-  <div class="modal-contenido" style="background:#fff; padding:20px; border-radius:8px; max-width:500px; width:90%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 style="margin:0;color:#1976d2;">Tipos de Movimiento</h3>
-      <button id="btn-cerrar-modal-agregar-tipo" class="modal-cerrar" title="Cerrar" style="background:none;border:none;font-size:1.5em;cursor:pointer;">&times;</button>
-    </div>
-    
-    <!-- Formulario para agregar nuevo tipo -->
-    <form id="form-agregar-tipo-movimiento" style="margin-bottom:20px;">
-      <div style="display:flex;gap:10px;margin-bottom:15px;">
-        <input id="nuevo-tipo-nombre" type="text" placeholder="Nuevo tipo de movimiento..." required style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;">
-        <select id="nuevo-tipo-tipo" required style="padding:8px;border:1px solid #ddd;border-radius:4px;">
-          <option value="ingreso">Ingreso</option>
-          <option value="egreso">Egreso</option>
-        </select>
-        <button type="submit" style="padding:8px 16px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer;">
-          <i class="fas fa-plus"></i>
-        </button>
-      </div>
-    </form>
-
-    <!-- Lista de tipos existentes -->
-    <div style="max-height:400px;overflow-y:auto;">
-      <div id="lista-tipos-ingreso">
-        <h4 style="color:#4caf50;margin:10px 0;">Ingresos</h4>
-        <ul class="lista-tipos" style="list-style:none;padding:0;margin:0;"></ul>
-      </div>
-      <div id="lista-tipos-egreso" style="margin-top:20px;">
-        <h4 style="color:#f44336;margin:10px 0;">Egresos</h4>
-        <ul class="lista-tipos" style="list-style:none;padding:0;margin:0;"></ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-  <!-- Modal de opciones para empresas y tipos de movimiento -->
-  <div id="modal-opciones" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div class="modal-contenido" style="background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%;">
-      <button id="btn-cerrar-opciones" class="modal-cerrar" title="Cerrar" style="float:right;font-size:1.5em;">&times;</button>
-      <h3 id="modal-opciones-titulo">Opciones</h3>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" id="input-nueva-opcion" placeholder="Nueva opción..." style="flex:1;">
-        <button id="btn-guardar-opcion" title="Agregar" style="padding:4px 12px;">+</button>
-      </div>
-      <ul id="lista-opciones" style="list-style:none;padding:0;margin:0 0 10px 0;"></ul>
-    </div>
-  </div>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
 </body>

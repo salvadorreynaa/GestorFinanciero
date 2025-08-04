@@ -231,12 +231,18 @@ document.addEventListener('DOMContentLoaded', function() {
     state.elementoActual = { nombre, tipo };
     setText(elements.mensajeConfirmar, 
       `¿Estás seguro de que deseas eliminar ${tipo === 'empresa' ? 'la empresa' : 'el tipo de movimiento'} "${nombre}"?`);
+    // Close any existing modal first
+    cerrarModalOpciones();
+    // Disable scrolling
+    document.body.style.overflow = 'hidden';
     setDisplay(elements.modalConfirmar, 'flex');
   };
 
   function cerrarModalConfirmacion() {
     setDisplay(elements.modalConfirmar, 'none');
     state.elementoActual = null;
+    // Re-enable scrolling
+    document.body.style.overflow = 'auto';
   }
 
   elements.btnCancelarEliminar?.addEventListener('click', cerrarModalConfirmacion);
