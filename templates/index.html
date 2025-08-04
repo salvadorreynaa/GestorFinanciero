@@ -8,201 +8,19 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
   <style>
-    .fecha-adicional.temporal {
-      background-color: #fff3cd;
-      border: 1px solid #ffeeba;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .fecha-adicional .fecha-info {
-      flex-grow: 1;
-    }
-
-    .fecha-adicional .fecha {
-      font-weight: bold;
-      margin-right: 10px;
-    }
-
-    .fecha-adicional .detalles {
-      color: #666;
-      font-size: 0.9em;
-    }
-
-    .fecha-adicional .botones {
-      display: flex;
-      gap: 5px;
-    }
-
-    .fecha-adicional.editado {
-      background-color: #d4edda;
-      border-color: #c3e6cb;
-    }
-
-    .fecha-adicional .btn-editar {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 2px 6px;
-      cursor: pointer;
-    }
-
-    .fecha-adicional .btn-eliminar {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 2px 6px;
-      cursor: pointer;
-    }
-
-    #btn-guardar-todos {
-      display: none;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      margin: 10px 0;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #btn-guardar-todos.visible {
-      display: block;
-    }
   </style>
   <title>Vaya Valla - Gestión Financiera</title>
+  <!-- Precargar recursos críticos -->
+  <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
+  <link rel="preload" href="{{ url_for('static', filename='img/logo.png') }}" as="image">
+  <!-- Estilos -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/edicion-movimientos.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+</head>
+<body>
   <script>
-    // Funciones para manejar fechas adicionales
-    function agregarFechaAdicional(event, fechaPrincipal) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      const [dia, mes, anio] = fechaPrincipal.split('/');
-      
-      // Buscar o crear el contenedor del selector de fecha
-      let selectorContainer = document.getElementById(`selector-${fechaPrincipal.replace(/\//g, '-')}`);
-      
-      if (!selectorContainer) {
-        // Si no existe, crear el selector de fecha
-        selectorContainer = document.createElement('div');
-        selectorContainer.id = `selector-${fechaPrincipal.replace(/\//g, '-')}`;
-        selectorContainer.className = 'fecha-selector';
-        selectorContainer.innerHTML = `
-          <input type="date" 
-                 id="fecha-adicional-input-${fechaPrincipal.replace(/\//g, '-')}" 
-                 min="${anio}-${mes.padStart(2, '0')}-01" 
-                 max="${anio}-${mes.padStart(2, '0')}-31" 
-                 value="${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}">
-          <button type="button" onclick="confirmarFechaAdicional(event, '${fechaPrincipal}')">Agregar</button>
-          <button type="button" class="cancelar" onclick="cerrarSelector(event, '${fechaPrincipal}')">Cancelar</button>
-        `;
-        
-        // Insertar el selector después del botón +
-        const fechaPrincipalDiv = event.target.closest('.fecha-principal');
-        fechaPrincipalDiv.after(selectorContainer);
-      }
-      
-      // Mostrar el selector
-      selectorContainer.classList.add('active');
-    }
-
-    // Función para confirmar y agregar la fecha adicional
-    function confirmarFechaAdicional(event, fechaPrincipal) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      const input = document.getElementById(`fecha-adicional-input-${fechaPrincipal.replace(/\//g, '-')}`);
-      const fechaSeleccionada = input.value;
-      const [anio, mes, dia] = fechaSeleccionada.split('-');
-      const nuevaFecha = `${dia}/${mes}/${anio}`;
-
-      // Crear div temporal para la nueva fecha
-      const contenedorAdicionales = document.getElementById(`adicionales-${fechaPrincipal.replace(/\//g, '-')}`);
-      const nuevaFechaDiv = document.createElement('div');
-      nuevaFechaDiv.className = 'fecha-adicional temporal';
-      nuevaFechaDiv.innerHTML = `
-          <span>${nuevaFecha}</span>
-          <button type="button" class="btn-editar" onclick="editarFechaTemporal(event, '${nuevaFecha}', '${fechaPrincipal}')">✎</button>
-          <button type="button" class="btn-confirmar" onclick="confirmarMovimientoTemporal(event, '${nuevaFecha}', '${fechaPrincipal}')">✓</button>
-          <button type="button" class="btn-cancelar" onclick="cancelarMovimientoTemporal(event, this)">✗</button>
-      `;
-      contenedorAdicionales.appendChild(nuevaFechaDiv);
-      
-      // Cerrar el selector de fecha
-      cerrarSelector(event, fechaPrincipal);
-    }
-
-    // Función para editar una fecha temporal antes de confirmarla
-    function editarFechaTemporal(event, fecha, fechaPrincipal) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      // Obtener los valores del formulario principal
-      const tipo = document.querySelector('select[name="tipo"]')?.value || '';
-      const tipoMovimiento = document.querySelector('input[name="tipo_movimiento"]')?.value || '';
-      const empresa = document.querySelector('select[name="empresa"]')?.value || '';
-      const monto = document.querySelector('input[name="monto"]')?.value || '';
-      const descripcion = document.querySelector('input[name="descripcion"]')?.value || '';
-      
-      // Mostrar el modal de edición con los valores actuales
-      const modal = document.getElementById('modalEdicion');
-      const editForm = document.getElementById('formEdicion');
-      
-      if (editForm) {
-          const [dia, mes, anio] = fecha.split('/');
-          editForm.querySelector('#editTipoSelect').value = tipo;
-          editForm.querySelector('#editTipoMovimiento').value = tipoMovimiento;
-          editForm.querySelector('#editEmpresa').value = empresa;
-          editForm.querySelector('#editMonto').value = monto;
-          editForm.querySelector('#editDescripcion').value = descripcion;
-          editForm.querySelector('#editFecha').value = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
-          
-          // Guardar referencia al elemento temporal
-          window.elementoTemporal = event.target.closest('.fecha-adicional');
-          window.fechaPrincipalTemporal = fechaPrincipal;
-          
-          // Cargar datos necesarios
-          cargarTiposMovimiento(tipo);
-          cargarEmpresas();
-      }
-      
-      modal.style.display = 'block';
-    }
-
-    // Función para confirmar un movimiento temporal
-    function confirmarMovimientoTemporal(event, fecha, fechaPrincipal) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      // Agregar la fecha al array de fechas adicionales
-      if (!window.fechasAdicionales[fechaPrincipal]) {
-          window.fechasAdicionales[fechaPrincipal] = [];
-      }
-      window.fechasAdicionales[fechaPrincipal].push(fecha);
-      
-      // Quitar clase temporal
-      const elemento = event.target.closest('.fecha-adicional');
-      if (elemento) {
-          elemento.classList.remove('temporal');
-          // Actualizar los botones
-          elemento.querySelector('.btn-editar').setAttribute('onclick', `editarFecha(event, '${fecha}')`);
-          elemento.querySelector('.btn-confirmar')?.remove();
-          elemento.querySelector('.btn-cancelar')?.remove();
-      }
-      
-      // Actualizar contador y agregar a la tabla
-      actualizarContadorMovimientos();
-      agregarMovimientoATabla(fecha);
-    }
-
-    // Función para cancelar un movimiento temporal
     function cancelarMovimientoTemporal(event, boton) {
       event.preventDefault();
       event.stopPropagation();
@@ -264,17 +82,6 @@
       }
     }
   </script>
-</body>
-  <title>Finanzas Vaya Valla</title>
-  <!-- Precargar recursos críticos -->
-  <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
-  <link rel="preload" href="{{ url_for('static', filename='img/logo.png') }}" as="image">
-  <!-- Estilos -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/edicion-movimientos.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-</head>
 <body>
   <header>
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="logo">
@@ -446,8 +253,6 @@
       <ul id="lista-opciones" style="list-style:none;padding:0;margin:0 0 10px 0;"></ul>
     </div>
   </div>
-  <script src="{{ url_for('static', filename='js/movimientos-temporales.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/edicion-movimientos.js') }}"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
 </body>
