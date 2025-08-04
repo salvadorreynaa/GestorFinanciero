@@ -561,11 +561,11 @@ def api_movimientos_post():
             empresa_id = None
 
         # Insertar o obtener tipo de movimiento
-        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) ON CONFLICT (nombre) DO NOTHING RETURNING id;', 
-                   (tipoMovimiento, tipo))
+        cur.execute('SELECT id FROM tipos_movimiento WHERE nombre = %s;', (tipoMovimiento,))
         tipo_id = cur.fetchone()
         if not tipo_id:
-            cur.execute('SELECT id FROM tipos_movimiento WHERE nombre = %s;', (tipoMovimiento,))
+            cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s) RETURNING id;', 
+                       (tipoMovimiento, tipo))
             tipo_id = cur.fetchone()
         tipo_id = tipo_id[0] if tipo_id else None
 
