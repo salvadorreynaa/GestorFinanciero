@@ -85,6 +85,95 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+# Rutas API para empresas y tipos de movimiento
+@app.route('/api/empresas', methods=['GET'])
+@api_login_required
+def get_empresas():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT nombre FROM empresas ORDER BY nombre')
+    empresas = [row[0] for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(empresas)
+
+@app.route('/api/tipos-movimiento', methods=['GET'])
+@api_login_required
+def get_tipos_movimiento():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT nombre, tipo FROM tipos_movimiento ORDER BY nombre')
+    tipos = [{"nombre": row[0], "tipo": row[1]} for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(tipos)
+
+@app.route('/api/agregar-empresa', methods=['POST'])
+@api_login_required
+def agregar_empresa():
+    empresa = request.json.get('empresa')
+    if not empresa:
+        return jsonify({"error": "Nombre de empresa requerido"}), 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('INSERT INTO empresas (nombre) VALUES (%s)', (empresa,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Empresa agregada con éxito"})
+    except psycopg2.Error as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/agregar-tipo-movimiento', methods=['POST'])
+@api_login_required
+def agregar_tipo_movimiento():
+    data = request.json
+    nombre = data.get('nombre')
+    tipo = data.get('tipo')
+    
+    if not nombre or not tipo:
+        return jsonify({"error": "Nombre y tipo son requeridos"}), 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('INSERT INTO tipos_movimiento (nombre, tipo) VALUES (%s, %s)', (nombre, tipo))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Tipo de movimiento agregado con éxito"})
+    except psycopg2.Error as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/eliminar-empresa', methods=['POST'])
+@api_login_required
+def eliminar_empresa():
+    empresa = request.json.get('empresa')
+    if not empresa:
+        return jsonify({"error": "Nombre de empresa requerido"}), 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('DELETE FROM empresas WHERE nombre = %s', (empresa,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Empresa eliminada con éxito"})
+    except psycopg2.Error as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
