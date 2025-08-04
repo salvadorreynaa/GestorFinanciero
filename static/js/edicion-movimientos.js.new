@@ -1,0 +1,356 @@
+// Variables globales para el modal de edición
+let fechaEnEdicion = null;
+let movimientoEnEdicion = null;
+
+// Función para cargar tipos de movimiento
+async function cargarTiposMovimiento(tipo, valorSeleccionado = null) {
+    try {
+        // Asegurarse de que hay un tipo válido
+        if (!tipo) {
+            console.error('Tipo no especificado');
+            return;
+        }
+
+        const response = await fetch(`/api/tipos_movimiento/${tipo}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al cargar tipos de movimiento: ${response.status}`);
+        }
+        
+        const tipos = await response.json();
+        const tipoMovimientoInput = document.getElementById('editTipoMovimiento');
+        
+        if (tipoMovimientoInput) {
+            // Destruir la instancia anterior de Awesomplete si existe
+            if (tipoMovimientoInput.awesomplete) {
+                tipoMovimientoInput.awesomplete.destroy();
+            }
+
+            // Si hay un valor seleccionado, establecerlo
+            if (valorSeleccionado) {
+                tipoMovimientoInput.value = valorSeleccionado;
+            }
+
+            // Crear una nueva instancia de Awesomplete
+            const awesomplete = new Awesomplete(tipoMovimientoInput, {
+                list: tipos,
+                minChars: 0,
+                autoFirst: true
+            });
+
+            // Configurar el input para manejo de selección
+            tipoMovimientoInput.addEventListener('click', function() {
+                this.select(); // Seleccionar todo el texto al hacer click
+                if (awesomplete.ul.childNodes.length === 0) {
+                    awesomplete.evaluate();
+                }
+                awesomplete.open();
+            });
+
+            // Guardar la instancia para uso futuro
+            tipoMovimientoInput.awesomplete = awesomplete;
+        }
+    } catch (error) {
+        console.error('Error al cargar tipos de movimiento:', error);
+    }
+}
+
+// Función para cargar empresas
+async function cargarEmpresas() {
+    try {
+        const baseUrl = window.location.origin;
+        const response = await fetch(`${baseUrl}/api/empresas`);
+        if (!response.ok) throw new Error('Error al cargar empresas');
+        
+        const empresas = await response.json();
+        const select = document.getElementById('editEmpresa');
+        
+        if (select) {
+            // Mantener la opción por defecto
+            select.innerHTML = '<option value="" disabled>Seleccionar...</option>';
+            
+            // Agregar las empresas
+            empresas.forEach(empresa => {
+                const option = document.createElement('option');
+                option.value = empresa.nombre;
+                option.textContent = empresa.nombre;
+                select.appendChild(option);
+            });
+
+            // Seleccionar la empresa actual si existe
+            const empresaActual = document.querySelector('select[name="empresa"]')?.value;
+            if (empresaActual) {
+                select.value = empresaActual;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar empresas:', error);
+    }
+}
+
+function crearTablaMovimientosTemp() {
+    const tabla = document.createElement('table');
+    tabla.className = 'tabla-temporal';
+    tabla.innerHTML = `
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Empresa</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Tipo Movimiento</th>
+                <th>Monto</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    // Insertar la tabla antes del formulario principal
+    const formPrincipal = document.getElementById('formulario');
+    if (formPrincipal) {
+        formPrincipal.parentNode.insertBefore(tabla, formPrincipal);
+    } else {
+        document.body.appendChild(tabla);
+    }
+    
+    return tabla;
+}
+
+function editarFecha(event, fecha) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    fechaEnEdicion = fecha;
+    const modal = document.getElementById('modalEdicion');
+    
+    try {
+        // Obtener los valores actuales
+        const fila = event.target.closest('tr');
+        if (!fila) {
+            throw new Error('No se encontró la fila a editar');
+        }
+
+        const celdas = fila.querySelectorAll('td');
+        const tipo = celdas[3].textContent;
+        const tipoMovimiento = celdas[4].textContent;
+        const empresa = celdas[1].textContent;
+        const descripcion = celdas[2].textContent;
+        const monto = celdas[5].textContent;
+        
+        // Establecer valores en el formulario de edición
+        const editForm = document.getElementById('formEdicion');
+        if (editForm) {
+            const tipoSelect = editForm.querySelector('#editTipoSelect');
+            const tipoMovimientoInput = editForm.querySelector('#editTipoMovimiento');
+            const empresaSelect = editForm.querySelector('#editEmpresa');
+            const descripcionInput = editForm.querySelector('#editDescripcion');
+            const montoInput = editForm.querySelector('#editMonto');
+            const fechaInput = editForm.querySelector('#editFecha');
+
+            if (tipoSelect) tipoSelect.value = tipo.toLowerCase();
+            if (tipoMovimientoInput) tipoMovimientoInput.value = tipoMovimiento;
+            if (empresaSelect) empresaSelect.value = empresa;
+            if (descripcionInput) descripcionInput.value = descripcion;
+            if (montoInput) montoInput.value = monto.replace('$', '').trim();
+
+            // Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
+            if (fechaInput && fecha) {
+                const [dia, mes, anio] = fecha.split('/');
+                fechaInput.value = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+            }
+
+            // Cargar tipos de movimiento y empresas
+            cargarTiposMovimiento(tipo.toLowerCase(), tipoMovimiento);
+            cargarEmpresas();
+        }
+
+        // Guardar referencia a la fila que se está editando
+        movimientoEnEdicion = fila;
+
+        // Mostrar el modal
+        if (modal) {
+            modal.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar datos para edición:', error);
+        alert('Hubo un error al cargar los datos para edición. Por favor, intenta de nuevo.');
+    }
+}
+
+function guardarEdicion() {
+    if (!fechaEnEdicion) return;
+    
+    try {
+        // Obtener los valores editados
+        const editForm = document.getElementById('formEdicion');
+        if (!editForm) {
+            throw new Error('No se encontró el formulario de edición');
+        }
+
+        const tipo = editForm.querySelector('#editTipoSelect')?.value;
+        const tipoMovimiento = editForm.querySelector('#editTipoMovimiento')?.value;
+        const empresa = editForm.querySelector('#editEmpresa')?.value;
+        const monto = editForm.querySelector('#editMonto')?.value;
+        const descripcion = editForm.querySelector('#editDescripcion')?.value;
+        const fecha = editForm.querySelector('#editFecha')?.value;
+        
+        // Validar campos requeridos
+        if (!tipo || !tipoMovimiento || !empresa || !monto || !descripcion || !fecha) {
+            alert('Por favor, complete todos los campos requeridos.');
+            return;
+        }
+        
+        // Convertir la fecha de YYYY-MM-DD a DD/MM/YYYY
+        const [anio, mes, dia] = fecha.split('-');
+        const fechaFormateada = `${parseInt(dia)}/${parseInt(mes)}/${anio}`;
+
+        // Encontrar y actualizar el elemento visual en la tabla temporal
+        const tablaTemp = document.querySelector('.tabla-temporal') || crearTablaMovimientosTemp();
+        const tbody = tablaTemp.querySelector('tbody');
+        
+        if (!tbody) {
+            throw new Error('No se pudo encontrar o crear la tabla temporal');
+        }
+
+        // Actualizar o crear la fila
+        if (movimientoEnEdicion) {
+            // Actualizar fila existente
+            const celdas = movimientoEnEdicion.querySelectorAll('td');
+            celdas[0].textContent = fechaFormateada;
+            celdas[1].textContent = empresa;
+            celdas[2].textContent = descripcion;
+            celdas[3].textContent = tipo;
+            celdas[4].textContent = tipoMovimiento;
+            celdas[5].textContent = monto;
+        } else {
+            // Crear nueva fila
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${fechaFormateada}</td>
+                <td>${empresa}</td>
+                <td>${descripcion}</td>
+                <td>${tipo}</td>
+                <td>${tipoMovimiento}</td>
+                <td>${monto}</td>
+                <td>
+                    <button onclick="editarMovimientoTemp(this)" class="btn-editar">Editar</button>
+                    <button onclick="eliminarMovimientoTemp(this)" class="btn-eliminar">Eliminar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // Cerrar el modal y limpiar estado
+        cerrarModalEdicion();
+        movimientoEnEdicion = null;
+        
+    } catch (error) {
+        console.error('Error al guardar la edición:', error);
+        alert('Hubo un error al guardar los cambios. Por favor, intenta de nuevo.');
+    }
+}
+
+function eliminarMovimientoTemp(btn) {
+    if (confirm('¿Estás seguro de que quieres eliminar este movimiento?')) {
+        const fila = btn.closest('tr');
+        fila.remove();
+        
+        // Si no quedan más filas, eliminar la tabla
+        const tabla = document.querySelector('.tabla-temporal');
+        if (tabla && !tabla.querySelector('tbody tr')) {
+            tabla.remove();
+        }
+    }
+}
+
+function cerrarModalEdicion() {
+    const modal = document.getElementById('modalEdicion');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    fechaEnEdicion = null;
+    movimientoEnEdicion = null;
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Agregar el modal al body si no existe
+    if (!document.getElementById('modalEdicion')) {
+        const modalHTML = `
+            <div id="modalEdicion" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Editar Movimiento</h2>
+                        <span class="close">&times;</span>
+                    </div>
+                    <form id="formEdicion">
+                        <div class="form-row">
+                            <label>
+                                Tipo:
+                                <select id="editTipoSelect" name="tipo" required onchange="cargarTiposMovimiento(this.value)">
+                                    <option value="ingreso">Ingreso</option>
+                                    <option value="egreso">Egreso</option>
+                                </select>
+                            </label>
+                            <label>
+                                Tipo de movimiento:
+                                <input type="text" id="editTipoMovimiento" class="awesomplete" name="tipo_movimiento" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Descripción:
+                                <input type="text" id="editDescripcion" name="descripcion" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Fecha:
+                                <input type="date" id="editFecha" name="fecha" required>
+                            </label>
+                            <label>
+                                Monto:
+                                <input type="number" id="editMonto" name="monto" step="0.01" required>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                Empresa:
+                                <select id="editEmpresa" name="empresa" required>
+                                    <option value="" disabled selected>Seleccionar...</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-row buttons-row">
+                            <button type="button" onclick="guardarEdicion()" class="btn-guardar">Guardar Cambios</button>
+                            <button type="button" onclick="cerrarModalEdicion()" class="btn-cancelar">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // Configurar el botón de cierre del modal
+    const closeBtn = document.querySelector('#modalEdicion .close');
+    if (closeBtn) {
+        closeBtn.onclick = cerrarModalEdicion;
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        const modal = document.getElementById('modalEdicion');
+        if (event.target === modal) {
+            cerrarModalEdicion();
+        }
+    };
+});
