@@ -1,6 +1,186 @@
 // script.js limpio y funcional usando backend con base de datos (Render)
 
+// Variables globales para opciones
+let opcionesIngreso = [];
+let opcionesEgreso = [];
+
+// Cache para datos
+const cache = {
+  empresas: [],
+  tiposMovimiento: {
+    ingreso: [],
+    egreso: []
+  },
+  ultimaActualizacion: {
+    empresas: 0,
+    tiposMovimiento: 0
+  }
+};
+
+// Tiempo de caducidad del cache en milisegundos (5 minutos)
+const CACHE_EXPIRY = 5 * 60 * 1000;
+
+async function cargarEmpresas() {
+  try {
+    const response = await fetch('/empresas');
+    if (!response.ok) throw new Error('Error al cargar empresas');
+    const empresas = await response.json();
+    
+    const selectEmpresa = document.getElementById('empresa');
+    selectEmpresa.innerHTML = '<option value="">Selecciona...</option>';
+    empresas.forEach(empresa => {
+      const option = document.createElement('option');
+      option.value = empresa;
+      option.textContent = empresa;
+      selectEmpresa.appendChild(option);
+    });
+
+    cache.empresas = empresas;
+    cache.ultimaActualizacion.empresas = Date.now();
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+async function cargarTiposMovimiento() {
+  try {
+    const response = await fetch('/tipos-movimiento');
+    if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
+    const tipos = await response.json();
+    
+    opcionesIngreso = tipos.filter(t => t.tipo === 'ingreso').map(t => t.nombre);
+    opcionesEgreso = tipos.filter(t => t.tipo === 'egreso').map(t => t.nombre);
+    
+    cache.tiposMovimiento.ingreso = opcionesIngreso;
+    cache.tiposMovimiento.egreso = opcionesEgreso;
+    cache.ultimaActualizacion.tiposMovimiento = Date.now();
+    
+    actualizarAutocompletado();
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Cargar datos iniciales
+  cargarEmpresas();
+  cargarTiposMovimiento();
+
+  // Configurar modal de empresas
+  const btnAgregarEmpresa = document.getElementById('btn-agregar-empresa');
+  const modalOpciones = document.getElementById('modal-opciones');
+  const btnCerrarOpciones = document.getElementById('btn-cerrar-opciones');
+  const inputNuevaOpcion = document.getElementById('input-nueva-opcion');
+  const btnGuardarOpcion = document.getElementById('btn-guardar-opcion');
+  const tituloModal = document.getElementById('modal-opciones-titulo');
+  const listaOpciones = document.getElementById('lista-opciones');
+
+  btnAgregarEmpresa?.addEventListener('click', () => {
+    tituloModal.textContent = 'Agregar Empresa';
+    modalOpciones.style.display = 'flex';
+    cargarListaEmpresas();
+  });
+
+  btnCerrarOpciones?.addEventListener('click', () => {
+    modalOpciones.style.display = 'none';
+  });
+
+  // Configurar modal de tipos de movimiento
+  const btnAgregarTipo = document.getElementById('btn-agregar-tipo');
+  const modalTipo = document.getElementById('modal-agregar-tipo-movimiento');
+  const formAgregarTipo = document.getElementById('form-agregar-tipo-movimiento');
+  const btnCerrarModalTipo = document.getElementById('btn-cerrar-modal-agregar-tipo');
+
+  btnAgregarTipo?.addEventListener('click', () => {
+    modalTipo.style.display = 'flex';
+  });
+
+  btnCerrarModalTipo?.addEventListener('click', () => {
+    modalTipo.style.display = 'none';
+  });
+
+  // Gestión de empresas
+  async function cargarListaEmpresas() {
+    try {
+      const response = await fetch('/empresas');
+      if (!response.ok) throw new Error('Error al cargar empresas');
+      const empresas = await response.json();
+      
+      listaOpciones.innerHTML = empresas.map(empresa => `
+        <li style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+          <span>${empresa}</span>
+          <button onclick="eliminarEmpresa('${empresa}')" style="background:none;border:none;color:red;cursor:pointer;">&times;</button>
+        </li>
+      `).join('');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  // Guardar nueva empresa
+  btnGuardarOpcion?.addEventListener('click', async () => {
+    const nuevaEmpresa = inputNuevaOpcion.value.trim();
+    if (!nuevaEmpresa) return;
+
+    try {
+      const response = await fetch('/agregar-empresa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empresa: nuevaEmpresa })
+      });
+
+      if (!response.ok) throw new Error('Error al agregar empresa');
+      
+      inputNuevaOpcion.value = '';
+      cargarEmpresas();
+      cargarListaEmpresas();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  });
+
+  // Gestión de tipos de movimiento
+  formAgregarTipo?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const nombre = document.getElementById('nuevo-tipo-nombre').value.trim();
+    const tipo = document.getElementById('nuevo-tipo-tipo').value;
+
+    try {
+      const response = await fetch('/agregar-tipo-movimiento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, tipo })
+      });
+
+      if (!response.ok) throw new Error('Error al agregar tipo de movimiento');
+      
+      document.getElementById('nuevo-tipo-nombre').value = '';
+      modalTipo.style.display = 'none';
+      cargarTiposMovimiento();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  });
+
+  // Autocompletado de tipos de movimiento
+  const tipoSelect = document.getElementById('tipo');
+  const tiposMovimientosInput = document.getElementById('tiposmovimientos');
+  
+  tipoSelect?.addEventListener('change', actualizarAutocompletado);
+  
+  function actualizarAutocompletado() {
+    const tipoSeleccionado = tipoSelect?.value;
+    if (!tipoSeleccionado || !tiposMovimientosInput) return;
+    
+    const opciones = tipoSeleccionado === 'ingreso' ? opcionesIngreso : opcionesEgreso;
+    
+    new Awesomplete(tiposMovimientosInput, {
+      list: opciones,
+      minChars: 1,
+      autoFirst: true
+    });
+  }
   // Manejo de movimientos múltiples
   const activarMultiples = document.getElementById('activar-multiples');
   const opcionesMultiples = document.getElementById('opciones-multiples');
@@ -45,4 +225,24 @@ document.addEventListener('DOMContentLoaded', () => {
   mesFinMultiple?.addEventListener('change', () => {
     if (activarMultiples?.checked) actualizarFechasMultiples();
   });
+
+  // Función global para eliminar empresa
+  window.eliminarEmpresa = async function(empresa) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar la empresa "${empresa}"?`)) return;
+
+    try {
+      const response = await fetch('/eliminar-empresa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empresa })
+      });
+
+      if (!response.ok) throw new Error('Error al eliminar empresa');
+      
+      cargarEmpresas();
+      cargarListaEmpresas();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 });
