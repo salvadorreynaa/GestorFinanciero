@@ -740,8 +740,8 @@ document.addEventListener("DOMContentLoaded", () => {
         descripcion,
         fecha: fechaMovimiento,
         mes: mesMovimiento.charAt(0).toUpperCase() + mesMovimiento.slice(1),
-        anio: anioMovimiento,
-        monto,
+        año: anioMovimiento,  // Fixed: anio -> año to match server expectations
+        monto: parseFloat(monto),  // Ensure monto is a number
         empresa,
         estado: "Pendiente"
       };
@@ -749,8 +749,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseUrl = 'https://finanzas-vaya-valla.onrender.com';
       return fetch(`${baseUrl}/api/movimientos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoMovimiento)
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(nuevoMovimiento),
+        credentials: 'include'  // This is important for sending cookies
       });
     };
 
@@ -758,11 +762,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!elements.activarMultiples?.checked || !elements.mesFinMultiple?.value) {
       // Movimiento único
       crearMovimiento(fecha)
-        .then(() => {
+        .then(async (response) => {
+          if (!response.ok) {
+            // Try to get detailed error message
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Error al guardar el movimiento');
+          }
           elements.formulario?.reset();
           mostrarToast("✅ Movimiento guardado correctamente.");
         })
-        .catch(console.error)
+        .catch(error => {
+          console.error('Error:', error);
+          mostrarToast(`❌ ${error.message || 'Error al guardar el movimiento'}`);
+        })
         .finally(() => {
           state.guardando = false;
         });
@@ -781,7 +793,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Esperar a que todos los movimientos se guarden
       Promise.all(promesas)
-        .then(() => {
+        .then(async responses => {
+          // Check if any response has errors
+          for (const response of responses) {
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.error || 'Error al guardar algunos movimientos');
+            }
+          }
           elements.formulario?.reset();
           mostrarToast(`✅ Se guardaron ${todasLasFechas.length} movimientos correctamente.`);
           // Limpiar las fechas adicionales
