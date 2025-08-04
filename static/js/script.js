@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let fecha = new Date(fechaInicio);
     while (fecha.getFullYear() < anioFin || 
-           (fecha.getFullYear() === anioFin && fecha.getMonth() < mesFin - 1)) {
+           (fecha.getFullYear() === anioFin && fecha.getMonth() <= mesFin - 1)) {
       fechas.push(fecha.toLocaleDateString());
       fecha = new Date(fecha.getFullYear(), fecha.getMonth() + 1, fecha.getDate());
     }
