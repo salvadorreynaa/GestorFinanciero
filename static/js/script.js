@@ -187,10 +187,12 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarListaOpciones();
   });
 
-  elements.btnCerrarOpciones?.addEventListener('click', () => {
+  function cerrarModalOpciones() {
     setDisplay(elements.modalOpciones, 'none');
     state.tipoActual = null;
-  });
+  }
+
+  elements.btnCerrarOpciones?.addEventListener('click', cerrarModalOpciones);
 
   // Funciones globales
   window.editarElemento = async function(nombre, tipo, tipoMovimiento = null) {
@@ -232,10 +234,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setDisplay(elements.modalConfirmar, 'flex');
   };
 
-  elements.btnCancelarEliminar?.addEventListener('click', () => {
+  function cerrarModalConfirmacion() {
     setDisplay(elements.modalConfirmar, 'none');
     state.elementoActual = null;
-  });
+  }
+
+  elements.btnCancelarEliminar?.addEventListener('click', cerrarModalConfirmacion);
 
   elements.btnConfirmarEliminar?.addEventListener('click', async () => {
     if (!state.elementoActual) return;
@@ -260,12 +264,12 @@ document.addEventListener('DOMContentLoaded', function() {
         await cargarTiposMovimiento();
       }
       
-      setDisplay(elements.modalConfirmar, 'none');
-      state.elementoActual = null;
+      cerrarModalConfirmacion();
       await cargarListaOpciones();
     } catch (error) {
       console.error('Error:', error);
       alert(`Error al eliminar ${state.elementoActual.tipo === 'empresa' ? 'la empresa' : 'el tipo de movimiento'}`);
+      cerrarModalConfirmacion();
     }
   });
 
