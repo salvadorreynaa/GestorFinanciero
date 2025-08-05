@@ -9,6 +9,34 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
   <style>
+    /* Estilos para el menú desplegable de Awesomplete */
+    .awesomplete > ul {
+      max-height: 300px !important;
+      overflow-y: auto !important;
+      border: 1px solid #ddd !important;
+      border-radius: 4px !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      background: white !important;
+      padding: 0 !important;
+      z-index: 2000 !important;
+    }
+    .awesomplete > ul > li {
+      padding: 8px 12px !important;
+      cursor: pointer !important;
+      transition: background-color 0.2s !important;
+    }
+    .awesomplete > ul > li:hover {
+      background-color: #f0f0f0 !important;
+    }
+    .awesomplete > ul > li[aria-selected="true"] {
+      background-color: #e3f2fd !important;
+      color: #1976d2 !important;
+    }
+    .awesomplete mark {
+      background-color: #fff3cd !important;
+      color: #856404 !important;
+      font-weight: bold !important;
+    }
   </style>
   <title>Vaya Valla - Gestión Financiera</title>
   <!-- Precargar recursos críticos -->

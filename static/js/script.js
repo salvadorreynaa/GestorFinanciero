@@ -384,9 +384,10 @@ document.addEventListener('DOMContentLoaded', function() {
     awesompleteInstance = new Awesomplete(elements.tiposMovimientosInput, {
       list: opciones,
       minChars: 0, // Mostrar todas las opciones al hacer clic
-      maxItems: 10, // Máximo número de items a mostrar
+      maxItems: 1000, // Mostrar prácticamente todas las opciones
       autoFirst: true, // Seleccionar automáticamente el primer elemento
-      filter: Awesomplete.FILTER_CONTAINS // Filtrar si contiene el texto (no solo al inicio)
+      filter: Awesomplete.FILTER_CONTAINS, // Filtrar si contiene el texto (no solo al inicio)
+      sort: (a, b) => a.value.localeCompare(b.value, 'es', { sensitivity: 'base' }) // Ordenar alfabéticamente
     });
 
     // Mostrar todas las opciones al hacer clic en el input
