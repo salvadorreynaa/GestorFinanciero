@@ -137,15 +137,19 @@ document.addEventListener('DOMContentLoaded', function() {
             </li>
           `).join('');
       } else if (state.tipoActual === 'tipo') {
-        const response = await fetch('/api/tipos_movimiento');
+        // Obtener el tipo seleccionado (ingreso/egreso)
+        const tipoSeleccionado = elements.selectTipoOpcion?.value || 'ingreso';
+        
+        // Obtener los tipos de movimiento filtrados por el tipo seleccionado
+        const response = await fetch(`/api/tipos_movimiento?tipo=${tipoSeleccionado}`);
         if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
         const data = await response.json();
-        const tipos = data.tipos || data;
+        const tipos = data.map(t => ({ nombre: t.nombre, tipo: tipoSeleccionado }));
         
         elements.listaOpciones.innerHTML = tipos
           .map(tipo => `
             <li style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:#f5f5f5;border-radius:4px;">
-              <span style="flex-grow:1;">${tipo.nombre} (${tipo.tipo})</span>
+              <span style="flex-grow:1;">${tipo.nombre}</span>
               <div style="display:flex;gap:8px;">
                 <button onclick="editarElemento('${tipo.nombre}', 'tipo', '${tipo.tipo}')" 
                   style="background:none;border:none;color:#2196F3;cursor:pointer;padding:4px;">
@@ -193,6 +197,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   elements.btnCerrarOpciones?.addEventListener('click', cerrarModalOpciones);
+  document.getElementById('btn-salir-opciones')?.addEventListener('click', cerrarModalOpciones);
+
+  // Agregar event listener para el cambio de tipo en el select
+  elements.selectTipoOpcion?.addEventListener('change', () => {
+    if (state.tipoActual === 'tipo') {
+      cargarListaOpciones();
+    }
+  });
 
   // Funciones globales
   window.editarElemento = async function(nombre, tipo, tipoMovimiento = null) {
