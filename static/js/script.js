@@ -243,18 +243,13 @@ document.addEventListener('DOMContentLoaded', function() {
     state.elementoActual = { nombre, tipo };
     setText(elements.mensajeConfirmar, 
       `¿Estás seguro de que deseas eliminar ${tipo === 'empresa' ? 'la empresa' : 'el tipo de movimiento'} "${nombre}"?`);
-    // Close any existing modal first
-    cerrarModalOpciones();
-    // Disable scrolling
-    document.body.style.overflow = 'hidden';
+    // No cerramos el modal de opciones, solo mostramos el de confirmación encima
     setDisplay(elements.modalConfirmar, 'flex');
   };
 
   function cerrarModalConfirmacion() {
     setDisplay(elements.modalConfirmar, 'none');
     state.elementoActual = null;
-    // Re-enable scrolling
-    document.body.style.overflow = 'auto';
   }
 
   elements.btnCancelarEliminar?.addEventListener('click', cerrarModalConfirmacion);
@@ -265,12 +260,13 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       if (state.elementoActual.tipo === 'empresa') {
         const response = await fetch('/api/empresas/' + encodeURIComponent(state.elementoActual.nombre), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ empresa: state.elementoActual.nombre })
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
         });
 
-        if (!response.ok) throw new Error('Error al eliminar empresa');
+        if (!response.ok) {
+          throw new Error(await response.text() || 'Error al eliminar empresa');
+        }
         await cargarEmpresas();
       } else {
         const response = await fetch('/api/tipos_movimiento/' + encodeURIComponent(state.elementoActual.nombre), {
@@ -278,15 +274,19 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (!response.ok) throw new Error('Error al eliminar tipo de movimiento');
+        if (!response.ok) {
+          throw new Error(await response.text() || 'Error al eliminar tipo de movimiento');
+        }
         await cargarTiposMovimiento();
       }
       
+      // Si todo fue exitoso, cerramos ambos modales
       cerrarModalConfirmacion();
+      cerrarModalOpciones();
       await cargarListaOpciones();
     } catch (error) {
       console.error('Error:', error);
-      alert(`Error al eliminar ${state.elementoActual.tipo === 'empresa' ? 'la empresa' : 'el tipo de movimiento'}`);
+      alert(error.message || `Error al eliminar ${state.elementoActual.tipo === 'empresa' ? 'la empresa' : 'el tipo de movimiento'}`);
       cerrarModalConfirmacion();
     }
   });
