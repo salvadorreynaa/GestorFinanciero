@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM cargado, iniciando aplicación...');
   // Referencias del DOM
   const elements = {
     // Formulario principal
@@ -84,18 +85,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function cargarTiposMovimiento() {
     try {
-      const response = await fetch('/api/tipos_movimiento');
-      if (!response.ok) throw new Error('Error al cargar tipos de movimiento');
-      const data = await response.json();
-      const tipos = data.tipos || data;
+      // Cargar tipos de ingreso
+      const responseIngreso = await fetch('/api/tipos_movimiento?tipo=ingreso');
+      if (!responseIngreso.ok) throw new Error('Error al cargar tipos de ingreso');
+      const dataIngreso = await responseIngreso.json();
+      state.opcionesIngreso = dataIngreso.map(t => t.nombre);
+
+      // Cargar tipos de egreso
+      const responseEgreso = await fetch('/api/tipos_movimiento?tipo=egreso');
+      if (!responseEgreso.ok) throw new Error('Error al cargar tipos de egreso');
+      const dataEgreso = await responseEgreso.json();
+      state.opcionesEgreso = dataEgreso.map(t => t.nombre);
       
-      state.opcionesIngreso = tipos.filter(t => t.tipo === 'ingreso').map(t => t.nombre);
-      state.opcionesEgreso = tipos.filter(t => t.tipo === 'egreso').map(t => t.nombre);
+      console.log('Tipos de ingreso cargados:', state.opcionesIngreso);
+      console.log('Tipos de egreso cargados:', state.opcionesEgreso);
       
       actualizarAutocompletado();
       actualizarListasTipos();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error al cargar tipos de movimiento:', error);
     }
   }
 
@@ -342,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!elements.tipoSelect || !elements.tiposMovimientosInput) return;
     const tipoSeleccionado = elements.tipoSelect.value;
     
+    console.log('Actualizando autocompletado para tipo:', tipoSeleccionado);
+    
     // Limpiar el input cuando se cambia el tipo
     elements.tiposMovimientosInput.value = '';
     
@@ -360,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Obtener las opciones según el tipo seleccionado
     const opciones = tipoSeleccionado === 'ingreso' ? state.opcionesIngreso : state.opcionesEgreso;
+    console.log('Opciones disponibles:', opciones);
     
     // Ordenar las opciones alfabéticamente
     opciones.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
@@ -435,4 +446,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Cargar datos iniciales
   cargarEmpresas();
   cargarTiposMovimiento();
+
+  // Agregar listener para el cambio de tipo
+  elements.tipoSelect?.addEventListener('change', function() {
+    console.log('Tipo seleccionado:', this.value);
+    actualizarAutocompletado();
+  });
 });
