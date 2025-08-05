@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   elements.btnCerrarOpciones?.addEventListener('click', cerrarModalOpciones);
-  document.getElementById('btn-salir-opciones')?.addEventListener('click', cerrarModalOpciones);
 
   // Agregar event listener para el cambio de tipo en el select
   elements.selectTipoOpcion?.addEventListener('change', () => {
@@ -280,9 +279,8 @@ document.addEventListener('DOMContentLoaded', function() {
         await cargarTiposMovimiento();
       }
       
-      // Si todo fue exitoso, cerramos ambos modales
+      // Solo cerramos el modal de confirmación y actualizamos la lista
       cerrarModalConfirmacion();
-      cerrarModalOpciones();
       await cargarListaOpciones();
     } catch (error) {
       console.error('Error:', error);
