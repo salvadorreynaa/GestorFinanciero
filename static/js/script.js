@@ -504,10 +504,14 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const fechaISO of fechas) {
           const [anio, mes, dia] = fechaISO.split('-').map(Number);
           
+          const nombreMes = new Date(anio, mes - 1, dia)
+            .toLocaleDateString('es', { month: 'long' });
+          const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+          
           const movimientoData = {
             ...data,
             fecha: fechaISO,
-            mes: new Date(anio, mes - 1, dia).toLocaleDateString('es', { month: 'long' }),
+            mes: mesCapitalizado,
             año: anio
           };
 
@@ -525,10 +529,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Crear un solo movimiento
         const [anio, mes, dia] = formData.get('fecha').split('-').map(Number);
         const fechaObj = new Date(anio, mes - 1, dia);
+        const nombreMes = fechaObj.toLocaleDateString('es', { month: 'long' });
+        const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+        
         const movimientoData = {
           ...data,
           fecha: formData.get('fecha'),
-          mes: fechaObj.toLocaleDateString('es', { month: 'long' }),
+          mes: mesCapitalizado,
           año: anio
         };
 
