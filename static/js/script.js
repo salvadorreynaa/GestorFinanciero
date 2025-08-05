@@ -428,31 +428,48 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function actualizarFechasMultiples() {
-    if (!elements.inputFecha?.value || !elements.mesFinMultiple?.value || !elements.explicacionMultiples) return;
+    if (!elements.inputFecha?.value || !elements.mesFinMultiple?.value || !elements.explicacionMultiples) return [];
 
     const fechaInicio = new Date(elements.inputFecha.value);
     const [anioFin, mesFin] = elements.mesFinMultiple.value.split('-').map(Number);
     const fechas = [];
     
+    // Crear una nueva fecha para no modificar la original
     let fecha = new Date(fechaInicio);
-    const diaOriginal = fecha.getDate(); // Guardamos el día original
+    const diaOriginal = fechaInicio.getDate(); // Guardamos el día original
     
     while (fecha.getFullYear() < anioFin || 
            (fecha.getFullYear() === anioFin && fecha.getMonth() <= mesFin - 1)) {
-      // Crear nueva fecha manteniendo el día original
+      // Crear nueva fecha para este mes manteniendo el día original
       const nuevaFecha = new Date(fecha.getFullYear(), fecha.getMonth(), diaOriginal);
-      fechas.push(nuevaFecha.toLocaleDateString());
-      fecha.setMonth(fecha.getMonth() + 1);
+      
+      // Asegurarse de que el día sea el correcto (por si el mes tiene menos días)
+      if (nuevaFecha.getDate() === diaOriginal) {
+        fechas.push(nuevaFecha.toISOString().split('T')[0]);
+      }
+      
+      // Avanzar al siguiente mes
+      fecha = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1);
     }
+
+    // Convertir fechas ISO a formato local para mostrar
+    const fechasFormateadas = fechas.map(f => {
+      const d = new Date(f);
+      return d.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    });
 
     if (fechas.length > 0) {
       setText(elements.explicacionMultiples, 
-        `Se crearán ${fechas.length} movimientos en las siguientes fechas: ${fechas.join(', ')}`);
+        `Se crearán ${fechas.length} movimientos en las siguientes fechas: ${fechasFormateadas.join(', ')}`);
     } else {
       setText(elements.explicacionMultiples, '');
     }
     
-    return fechas; // Retornamos las fechas para usarlas al enviar el formulario
+    return fechas;
   }
 
   elements.inputFecha?.addEventListener('change', () => {
@@ -461,6 +478,80 @@ document.addEventListener('DOMContentLoaded', function() {
 
   elements.mesFinMultiple?.addEventListener('change', () => {
     if (elements.activarMultiples?.checked) actualizarFechasMultiples();
+  });
+
+  // Manejo del formulario
+  document.getElementById('formulario')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+      tipo: formData.get('tipo'),
+      descripcion: formData.get('descripcion'),
+      monto: parseFloat(formData.get('monto')),
+      empresa: formData.get('empresa'),
+      tipoMovimiento: formData.get('tiposmovimientos'),
+      estado: 'Pendiente'
+    };
+
+    try {
+      if (elements.activarMultiples?.checked) {
+        // Obtener las fechas múltiples
+        const fechaInicio = new Date(formData.get('fecha'));
+        const fechas = actualizarFechasMultiples();
+        
+        // Crear cada movimiento
+        for (const fechaISO of fechas) {
+          const fechaObj = new Date(fechaISO);
+          
+          const movimientoData = {
+            ...data,
+            fecha: fechaISO,
+            mes: fechaObj.toLocaleDateString('es', { month: 'long' }),
+            año: fechaObj.getFullYear()
+          };
+
+          const response = await fetch('/api/movimientos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(movimientoData)
+          });
+
+          if (!response.ok) throw new Error('Error al crear movimiento');
+        }
+        
+        showNotification(`Se han creado ${fechas.length} movimientos correctamente`);
+      } else {
+        // Crear un solo movimiento
+        const fechaObj = new Date(formData.get('fecha'));
+        const movimientoData = {
+          ...data,
+          fecha: formData.get('fecha'),
+          mes: formData.get('mes'),
+          año: parseInt(formData.get('año'))
+        };
+
+        const response = await fetch('/api/movimientos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(movimientoData)
+        });
+
+        if (!response.ok) throw new Error('Error al crear movimiento');
+        showNotification('Movimiento creado correctamente');
+      }
+
+      // Limpiar el formulario
+      this.reset();
+      if (elements.activarMultiples) {
+        elements.activarMultiples.checked = false;
+        setDisplay(elements.opcionesMultiples, 'none');
+      }
+      
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Error al crear el movimiento', 'error');
+    }
   });
 
   // Cargar datos iniciales
