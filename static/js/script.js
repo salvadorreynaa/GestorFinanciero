@@ -430,36 +430,37 @@ document.addEventListener('DOMContentLoaded', function() {
   function actualizarFechasMultiples() {
     if (!elements.inputFecha?.value || !elements.mesFinMultiple?.value || !elements.explicacionMultiples) return [];
 
-    const fechaInicio = new Date(elements.inputFecha.value);
+    // Obtener la fecha de inicio y asegurarnos de que use la zona horaria local
+    const [anioInicio, mesInicio, diaInicio] = elements.inputFecha.value.split('-').map(Number);
+    const fechaInicio = new Date(anioInicio, mesInicio - 1, diaInicio, 12, 0, 0);
+    
     const [anioFin, mesFin] = elements.mesFinMultiple.value.split('-').map(Number);
     const fechas = [];
     
     // Crear una nueva fecha para no modificar la original
     let fecha = new Date(fechaInicio);
-    const diaOriginal = fechaInicio.getDate(); // Guardamos el día original
+    const diaOriginal = diaInicio; // Usamos el día que viene del input
     
     while (fecha.getFullYear() < anioFin || 
            (fecha.getFullYear() === anioFin && fecha.getMonth() <= mesFin - 1)) {
       // Crear nueva fecha para este mes manteniendo el día original
-      const nuevaFecha = new Date(fecha.getFullYear(), fecha.getMonth(), diaOriginal);
+      const nuevaFecha = new Date(fecha.getFullYear(), fecha.getMonth(), diaOriginal, 12, 0, 0);
       
-      // Asegurarse de que el día sea el correcto (por si el mes tiene menos días)
+      // Asegurarse de que el día sea el correcto
       if (nuevaFecha.getDate() === diaOriginal) {
-        fechas.push(nuevaFecha.toISOString().split('T')[0]);
+        // Formatear la fecha en YYYY-MM-DD manteniendo el día correcto
+        const fechaFormateada = `${nuevaFecha.getFullYear()}-${String(nuevaFecha.getMonth() + 1).padStart(2, '0')}-${String(diaOriginal).padStart(2, '0')}`;
+        fechas.push(fechaFormateada);
       }
       
       // Avanzar al siguiente mes
-      fecha = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1);
+      fecha = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1, 12, 0, 0);
     }
-
-    // Convertir fechas ISO a formato local para mostrar
+    
+    // Formatear las fechas manualmente para mantener el día correcto
     const fechasFormateadas = fechas.map(f => {
-      const d = new Date(f);
-      return d.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      const [anio, mes, dia] = f.split('-').map(Number);
+      return `${dia}/${mes}/${anio}`;
     });
 
     if (fechas.length > 0) {
@@ -497,18 +498,17 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       if (elements.activarMultiples?.checked) {
         // Obtener las fechas múltiples
-        const fechaInicio = new Date(formData.get('fecha'));
         const fechas = actualizarFechasMultiples();
         
         // Crear cada movimiento
         for (const fechaISO of fechas) {
-          const fechaObj = new Date(fechaISO);
+          const [anio, mes, dia] = fechaISO.split('-').map(Number);
           
           const movimientoData = {
             ...data,
             fecha: fechaISO,
-            mes: fechaObj.toLocaleDateString('es', { month: 'long' }),
-            año: fechaObj.getFullYear()
+            mes: new Date(anio, mes - 1, dia).toLocaleDateString('es', { month: 'long' }),
+            año: anio
           };
 
           const response = await fetch('/api/movimientos', {
@@ -523,12 +523,13 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification(`Se han creado ${fechas.length} movimientos correctamente`);
       } else {
         // Crear un solo movimiento
-        const fechaObj = new Date(formData.get('fecha'));
+        const [anio, mes, dia] = formData.get('fecha').split('-').map(Number);
+        const fechaObj = new Date(anio, mes - 1, dia);
         const movimientoData = {
           ...data,
           fecha: formData.get('fecha'),
-          mes: formData.get('mes'),
-          año: parseInt(formData.get('año'))
+          mes: fechaObj.toLocaleDateString('es', { month: 'long' }),
+          año: anio
         };
 
         const response = await fetch('/api/movimientos', {
