@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
     opcionesIngreso: [],
     opcionesEgreso: [],
     elementoActual: null,
-    tipoActual: null
+    tipoActual: null,
+    lastSelected: null // Para mantener la última selección
   };
 
   // Funciones auxiliares
@@ -335,21 +336,63 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Autocompletado
+  let awesompleteInstance = null;
+
   function actualizarAutocompletado() {
     if (!elements.tipoSelect || !elements.tiposMovimientosInput) return;
     const tipoSeleccionado = elements.tipoSelect.value;
-    if (!tipoSeleccionado) return;
     
+    // Limpiar el input cuando se cambia el tipo
+    elements.tiposMovimientosInput.value = '';
+    
+    // Si no hay tipo seleccionado, deshabilitar el autocompletado
+    if (!tipoSeleccionado) {
+      if (awesompleteInstance) {
+        awesompleteInstance.destroy();
+        awesompleteInstance = null;
+      }
+      elements.tiposMovimientosInput.disabled = true;
+      return;
+    }
+
+    // Habilitar el input
+    elements.tiposMovimientosInput.disabled = false;
+    
+    // Obtener las opciones según el tipo seleccionado
     const opciones = tipoSeleccionado === 'ingreso' ? state.opcionesIngreso : state.opcionesEgreso;
     
-    new Awesomplete(elements.tiposMovimientosInput, {
+    // Ordenar las opciones alfabéticamente
+    opciones.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+    // Destruir la instancia anterior si existe
+    if (awesompleteInstance) {
+      awesompleteInstance.destroy();
+    }
+
+    // Crear nueva instancia de Awesomplete
+    awesompleteInstance = new Awesomplete(elements.tiposMovimientosInput, {
       list: opciones,
-      minChars: 1,
-      autoFirst: true
+      minChars: 0, // Mostrar todas las opciones al hacer clic
+      maxItems: 10, // Máximo número de items a mostrar
+      autoFirst: true, // Seleccionar automáticamente el primer elemento
+      filter: Awesomplete.FILTER_CONTAINS // Filtrar si contiene el texto (no solo al inicio)
+    });
+
+    // Mostrar todas las opciones al hacer clic en el input
+    elements.tiposMovimientosInput.addEventListener('focus', function() {
+      if (this.value === '') {
+        awesompleteInstance.evaluate();
+        awesompleteInstance.open();
+      }
     });
   }
 
   elements.tipoSelect?.addEventListener('change', actualizarAutocompletado);
+
+  // Inicializar el estado del input de tipos de movimiento
+  if (elements.tiposMovimientosInput) {
+    elements.tiposMovimientosInput.disabled = true;
+  }
 
   // Manejo de movimientos múltiples
   elements.activarMultiples?.addEventListener('change', function() {
