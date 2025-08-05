@@ -1,5 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM cargado, iniciando aplicación...');
+
+  // Función para mostrar notificaciones
+  function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.backgroundColor = type === 'success' ? '#4caf50' : '#f44336';
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 3000);
+  }
+
   // Referencias del DOM
   const elements = {
     // Formulario principal
@@ -422,10 +435,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const fechas = [];
     
     let fecha = new Date(fechaInicio);
+    const diaOriginal = fecha.getDate(); // Guardamos el día original
+    
     while (fecha.getFullYear() < anioFin || 
            (fecha.getFullYear() === anioFin && fecha.getMonth() <= mesFin - 1)) {
-      fechas.push(fecha.toLocaleDateString());
-      fecha = new Date(fecha.getFullYear(), fecha.getMonth() + 1, fecha.getDate());
+      // Crear nueva fecha manteniendo el día original
+      const nuevaFecha = new Date(fecha.getFullYear(), fecha.getMonth(), diaOriginal);
+      fechas.push(nuevaFecha.toLocaleDateString());
+      fecha.setMonth(fecha.getMonth() + 1);
     }
 
     if (fechas.length > 0) {
@@ -434,6 +451,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       setText(elements.explicacionMultiples, '');
     }
+    
+    return fechas; // Retornamos las fechas para usarlas al enviar el formulario
   }
 
   elements.inputFecha?.addEventListener('change', () => {

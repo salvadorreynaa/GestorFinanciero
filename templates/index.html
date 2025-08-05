@@ -37,6 +37,25 @@
       color: #856404 !important;
       font-weight: bold !important;
     }
+    /* Estilos para notificaciones */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 4px;
+      background-color: #4caf50;
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    }
+    .notification.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
   <title>Vaya Valla - Gestión Financiera</title>
   <!-- Precargar recursos críticos -->
@@ -230,9 +249,83 @@
 
     <!-- Botón de enviar -->
     <div class="form-row" style="justify-content: flex-end;">
-      <button type="submit" class="check-button">&#10003;</button>
+      <button type="submit" id="btn-submit" class="check-button">&#10003;</button>
     </div>
   </form>
+
+  <script>
+    document.getElementById('formulario').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const data = {
+        tipo: formData.get('tipo'),
+        descripcion: formData.get('descripcion'),
+        monto: parseFloat(formData.get('monto')),
+        empresa: formData.get('empresa'),
+        tipoMovimiento: formData.get('tiposmovimientos'),
+        estado: 'Pendiente'
+      };
+
+      try {
+        if (document.getElementById('activar-multiples').checked) {
+          // Obtener las fechas múltiples
+          const fechaInicio = new Date(formData.get('fecha'));
+          const fechas = actualizarFechasMultiples();
+          
+          // Crear cada movimiento
+          for (const fecha of fechas) {
+            const [dia, mes, anio] = fecha.split('/');
+            const fechaObj = new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+            
+            const movimientoData = {
+              ...data,
+              fecha: fechaObj.toISOString().split('T')[0],
+              mes: new Intl.DateTimeFormat('es', { month: 'long' }).format(fechaObj),
+              año: fechaObj.getFullYear()
+            };
+
+            const response = await fetch('/api/movimientos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(movimientoData)
+            });
+
+            if (!response.ok) throw new Error('Error al crear movimiento');
+          }
+          
+          showNotification(`Se han creado ${fechas.length} movimientos correctamente`);
+        } else {
+          // Crear un solo movimiento
+          const fechaObj = new Date(formData.get('fecha'));
+          const movimientoData = {
+            ...data,
+            fecha: formData.get('fecha'),
+            mes: formData.get('mes'),
+            año: parseInt(formData.get('año'))
+          };
+
+          const response = await fetch('/api/movimientos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(movimientoData)
+          });
+
+          if (!response.ok) throw new Error('Error al crear movimiento');
+          showNotification('Movimiento creado correctamente');
+        }
+
+        // Limpiar el formulario
+        this.reset();
+        document.getElementById('activar-multiples').checked = false;
+        setDisplay(document.getElementById('opciones-multiples'), 'none');
+        
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al crear el movimiento', 'error');
+      }
+    });
+  </script>
 
 
 
@@ -268,6 +361,8 @@
   </div>
 </div>
 
+  <div id="notification" class="notification"></div>
+  
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
 </body>
