@@ -1,11 +1,11 @@
 {
-  "name": "Finanzas Vaya Valla",
-  "short_name": "Vaya Valla",
+  "name": "Vaya Valla Finanzas",
+  "short_name": "Finanzas",
   "description": "Gestión financiera de Vaya Valla",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#0d6efd",
   "icons": [
     {
       "src": "/static/img/logo-192x192.png",
