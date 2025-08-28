@@ -1,10 +1,6 @@
 const CACHE_NAME = 'vaya-valla-v1';
 const urlsToCache = [
   '/',
-  '/login',
-  '/movimientos',
-  '/estadisticas',
-  '/contactos',
   '/static/css/styles.css',
   '/static/css/navbar.css',
   '/static/css/movimientos.css',
@@ -19,13 +15,7 @@ const urlsToCache = [
   '/static/js/navbar.js',
   '/static/js/storage.js',
   '/static/img/logo.png',
-  '/static/img/favicon.ico',
-  '/static/img/logo-192x192.png',
-  '/static/img/logo-512x512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css'
+  '/static/img/favicon.ico'
 ];
 
 self.addEventListener('install', function(event) {
