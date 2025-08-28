@@ -13,11 +13,16 @@ app.secret_key = 'vayavalla2512'  # Clave secreta para las sesiones
 # Rutas para PWA
 @app.route('/sw.js')
 def service_worker():
-    return app.send_file('sw.js', mimetype='application/javascript')
+    response = app.send_file('sw.js', mimetype='application/javascript')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 @app.route('/manifest.json')
 def manifest():
-    return app.send_file('static/manifest.json', mimetype='application/json')
+    response = app.send_file('static/manifest.json', mimetype='application/json')
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 # Configuraciones de seguridad para las sesiones
 app.config['SESSION_COOKIE_SECURE'] = True  # Solo enviar cookie por HTTPS
