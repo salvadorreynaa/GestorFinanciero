@@ -2,20 +2,41 @@
   "name": "Finanzas Vaya Valla",
   "short_name": "Vaya Valla",
   "description": "Gestión financiera de Vaya Valla",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#000000",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/static/img/logo-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/img/logo-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver Movimientos",
+      "short_name": "Movimientos",
+      "description": "Ver lista de movimientos",
+      "url": "/movimientos",
+      "icons": [{ "src": "/static/img/logo-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ver Estadísticas",
+      "short_name": "Estadísticas",
+      "description": "Ver estadísticas financieras",
+      "url": "/estadisticas",
+      "icons": [{ "src": "/static/img/logo-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
