@@ -40,7 +40,8 @@ def manifest():
 app.config['SESSION_COOKIE_SECURE'] = True  # Solo enviar cookie por HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevenir acceso por JavaScript
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Protección contra CSRF
-app.config['PERMANENT_SESSION_LIFETIME'] = 7200  # Sesión expira después de 2 horas de inactividad
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)  # Sesión expira después de 2 horas de inactividad
+app.config['SESSION_TYPE'] = 'filesystem'  # Usar sistema de archivos para las sesiones
 
 # Sistema de seguridad contra intentos de inicio de sesión
 login_attempts = {}
@@ -189,7 +190,6 @@ def login():
 def logout():
     session.clear()  # Limpiar toda la sesión
     return redirect(url_for('login'))
-    return render_template('facturacion_login.html')
 
 @app.route('/')
 @login_required
@@ -199,17 +199,18 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    # Verificar que la sesión esté activa
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return render_template('dashboard.html')
 
 @app.route('/finanzas')
 @login_required
 def finanzas():
+    # Verificar que la sesión esté activa
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return render_template('index.html')
-    cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')
-    movimientos = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('index.html', movimientos=movimientos)
 
 # Endpoint para estadísticas
 @app.route('/estadisticas')
