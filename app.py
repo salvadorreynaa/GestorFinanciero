@@ -156,10 +156,6 @@ def facturacion_login():
 @app.route('/')
 @login_required
 def index():
-    # Redirigir al dashboard después del login
-    if 'facturacion_access' not in session:
-        return render_template('dashboard.html')
-    
     # Si tiene acceso a facturación y viene de ahí, mostrar la página de facturación
     if session.get('facturacion_access') and request.args.get('section') == 'facturacion':
         return render_template('facturacion/index.html')
