@@ -152,6 +152,39 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Verificar si la IP está bloqueada
+        ip = request.remote_addr
+        if not check_login_attempts(ip):
+            minutes = int(BLOCK_TIME / 60)
+            seconds = BLOCK_TIME % 60
+            return render_template('login.html', 
+                error=f'Demasiados intentos fallidos. Por favor espera {minutes} minutos y {seconds} segundos.')
+
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == VALID_USERNAME and password == "palayenti2512":
+            # Limpiar intentos fallidos
+            if ip in login_attempts:
+                del login_attempts[ip]
+            # Crear una sesión no permanente (se elimina al cerrar el navegador)
+            session.permanent = False
+            session['logged_in'] = True
+            session['last_activity'] = time.time()
+            session['ip'] = ip  # Guardar IP para verificación adicional
+            return redirect(url_for('dashboard'))
+        
+        # Registrar intento fallido
+        record_failed_attempt(ip)
+        remaining_attempts = ATTEMPT_LIMIT - login_attempts[ip][0]
+        return render_template('login.html', 
+            error=f'Usuario o contraseña incorrectos. Te quedan {remaining_attempts} intentos.')
+    
+    return render_template('login.html')
+
 @app.route('/logout')
 def logout():
     session.clear()  # Limpiar toda la sesión
