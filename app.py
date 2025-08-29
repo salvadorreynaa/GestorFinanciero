@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
 from functools import wraps
 import psycopg2
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -137,12 +137,34 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None)
+    session.clear()  # Limpiar toda la sesión
     return redirect(url_for('login'))
+
+@app.route('/facturacion/login', methods=['GET', 'POST'])
+@login_required
+def facturacion_login():
+    if request.method == 'POST':
+        pin = request.form.get('pin')
+        if pin == '251281':
+            session['facturacion_access'] = True
+            return redirect(url_for('index', section='facturacion'))
+        else:
+            flash('PIN incorrecto')
+            return render_template('facturacion_login.html')
+    return render_template('facturacion_login.html')
 
 @app.route('/')
 @login_required
 def index():
+    # Redirigir al dashboard después del login
+    if 'facturacion_access' not in session:
+        return render_template('dashboard.html')
+    
+    # Si tiene acceso a facturación y viene de ahí, mostrar la página de facturación
+    if session.get('facturacion_access') and request.args.get('section') == 'facturacion':
+        return render_template('facturacion/index.html')
+    
+    # En otro caso, mostrar la página de finanzas
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Vaya Valla</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .dashboard-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .dashboard-options {
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+        }
+        .option-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .option-card:hover {
+            transform: translateY(-5px);
+        }
+        .option-card img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1rem;
+        }
+        .option-card h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        .option-card p {
+            color: #666;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-options">
+            <a href="{{ url_for('index') }}" class="option-card">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Finanzas">
+                <h2>Finanzas Vaya Valla</h2>
+                <p>Gestiona tus movimientos financieros, estadísticas y contactos</p>
+            </a>
+            <a href="{{ url_for('facturacion_login') }}" class="option-card">
+                <img src="{{ url_for('static', filename='img/invoice.png') }}" alt="Facturación">
+                <h2>Sistema de Facturación</h2>
+                <p>Emite y gestiona tus facturas de manera eficiente</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
