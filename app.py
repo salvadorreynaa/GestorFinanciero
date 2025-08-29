@@ -156,7 +156,7 @@ def facturacion_login():
         pin = request.form.get('pin')
         if pin == '251281':
             session['facturacion_access'] = True
-            return redirect(url_for('index', section='facturacion'))
+            return redirect(url_for('facturacion.index'))
         else:
             flash('PIN incorrecto')
             return render_template('facturacion_login.html')
