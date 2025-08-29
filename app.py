@@ -156,18 +156,6 @@ def login():
 def logout():
     session.clear()  # Limpiar toda la sesión
     return redirect(url_for('login'))
-
-@app.route('/facturacion/login', methods=['GET', 'POST'])
-@login_required
-def facturacion_login():
-    if request.method == 'POST':
-        pin = request.form.get('pin')
-        if pin == '251281':
-            session['facturacion_access'] = True
-            return redirect(url_for('facturacion.index'))
-        else:
-            flash('PIN incorrecto')
-            return render_template('facturacion_login.html')
     return render_template('facturacion_login.html')
 
 @app.route('/')
