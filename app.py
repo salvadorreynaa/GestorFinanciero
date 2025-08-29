@@ -156,18 +156,22 @@ def facturacion_login():
 @app.route('/')
 @login_required
 def index():
-    # Si tiene acceso a facturación y viene de ahí, mostrar la página de facturación
-    if session.get('facturacion_access') and request.args.get('section') == 'facturacion':
-        return render_template('facturacion/index.html')
-    
-    # En otro caso, mostrar la página de finanzas
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')
-    movimientos = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('index.html', movimientos=movimientos)
+    try:
+        # Si tiene acceso a facturación y viene de ahí, mostrar la página de facturación
+        if session.get('facturacion_access') and request.args.get('section') == 'facturacion':
+            return render_template('facturacion/index.html')
+        
+        # En otro caso, mostrar la página de finanzas
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')
+        movimientos = cur.fetchall()
+        cur.close()
+        conn.close()
+        return render_template('index.html', movimientos=movimientos)
+    except Exception as e:
+        print('Error en index:', e)
+        return render_template('index.html', movimientos=[])
 
 # Endpoint para estadísticas
 @app.route('/estadisticas')
