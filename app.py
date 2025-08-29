@@ -10,6 +10,15 @@ import time
 app = Flask(__name__)
 app.secret_key = 'vayavalla2512'  # Clave secreta para las sesiones
 
+# Configuración de SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost/vayavalla'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Importar y registrar el blueprint de facturación
+from facturacion.routes import facturacion_bp, db
+db.init_app(app)
+app.register_blueprint(facturacion_bp)
+
 # Rutas para PWA
 @app.route('/sw.js')
 def service_worker():
