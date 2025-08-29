@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vaya Valla</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
         .dashboard-container {
             display: flex;
@@ -52,7 +51,7 @@
 <body>
     <div class="dashboard-container">
         <div class="dashboard-options">
-            <a href="{{ url_for('index') }}" class="option-card">
+            <a href="{{ url_for('finanzas') }}" class="option-card">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Finanzas">
                 <h2>Finanzas Vaya Valla</h2>
                 <p>Gestiona tus movimientos financieros, estadísticas y contactos</p>

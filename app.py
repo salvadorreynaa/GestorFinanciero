@@ -166,8 +166,7 @@ def dashboard():
 @app.route('/finanzas')
 @login_required
 def finanzas():
-    conn = get_db_connection()
-    cur = conn.cursor()
+    return render_template('index.html')
     cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')
     movimientos = cur.fetchall()
     cur.close()
