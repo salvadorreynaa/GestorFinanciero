@@ -159,9 +159,8 @@ def login():
         # Verificar si la IP está bloqueada
         ip = request.remote_addr
         if not check_login_attempts(ip):
-            time_left = BLOCK_TIME - (datetime.now() - login_attempts[ip][1]).seconds
-            minutes = time_left // 60
-            seconds = time_left % 60
+            minutes = int(BLOCK_TIME / 60)
+            seconds = BLOCK_TIME % 60
             return render_template('login.html', 
                 error=f'Demasiados intentos fallidos. Por favor espera {minutes} minutos y {seconds} segundos.')
 
@@ -199,11 +198,6 @@ def index():
 
 @app.route('/dashboard')
 @login_required
-def dashboard():
-    # Verificar que la sesión esté activa
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    return render_template('dashboard.html')
 def dashboard():
     # Verificar que la sesión esté activa
     if not session.get('logged_in'):
