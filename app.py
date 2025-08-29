@@ -25,7 +25,7 @@ db.init_app(app)
 
 # Importar y registrar el blueprint de facturación
 from facturacion import facturacion_bp
-app.register_blueprint(facturacion_bp)
+app.register_blueprint(facturacion_bp, url_prefix='/facturacion')
 
 # Rutas para PWA
 @app.route('/sw.js')
