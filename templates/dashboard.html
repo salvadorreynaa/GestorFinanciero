@@ -3,114 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Vaya Valla Publicidad</title>
+    <title>Dashboard - Vaya Valla</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-
         .dashboard-container {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #f5f5f5;
-            padding: 1rem;
         }
-
         .dashboard-options {
             display: flex;
             gap: 2rem;
-            padding: 1rem;
-            max-width: 100%;
-            flex-wrap: wrap;
-            justify-content: center;
+            padding: 2rem;
         }
-
         .option-card {
             background: white;
             border-radius: 10px;
-            padding: 1.5rem;
-            width: 100%;
-            max-width: 300px;
+            padding: 2rem;
+            width: 300px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
             cursor: pointer;
             text-decoration: none;
             color: inherit;
-            margin-bottom: 1rem;
         }
-
-        .option-card:hover, .option-card:focus {
+        .option-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
-
-        .option-card:active {
-            transform: translateY(-2px);
-        }
-
         .option-card img {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             margin-bottom: 1rem;
-            object-fit: contain;
         }
-
         .option-card h2 {
             margin: 0;
             color: #333;
-            font-size: clamp(1.2rem, 4vw, 1.5rem);
-            line-height: 1.2;
+            font-size: 1.5rem;
         }
-
         .option-card p {
             color: #666;
             margin-top: 1rem;
-            font-size: clamp(0.875rem, 3vw, 1rem);
-            line-height: 1.5;
-        }
-
-        /* Media Queries para diferentes tamaños de pantalla */
-        @media (max-width: 768px) {
-            .dashboard-options {
-                gap: 1rem;
-                padding: 0.5rem;
-            }
-
-            .option-card {
-                padding: 1.25rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .dashboard-container {
-                padding: 0.5rem;
-            }
-
-            .option-card img {
-                width: 60px;
-                height: 60px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="dashboard-options">
-            <a href="{{ url_for('finanzas') }}" class="option-card">
+            <a href="{{ url_for('index') }}" class="option-card">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Finanzas">
                 <h2>Finanzas Vaya Valla</h2>
                 <p>Gestiona tus movimientos financieros, estadísticas y contactos</p>
             </a>
-            <a href="{{ url_for('facturacion.login') }}" class="option-card">
+            <a href="{{ url_for('facturacion_login') }}" class="option-card">
                 <img src="{{ url_for('static', filename='img/invoice.png') }}" alt="Facturación">
                 <h2>Sistema de Facturación</h2>
                 <p>Emite y gestiona tus facturas de manera eficiente</p>
