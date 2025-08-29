@@ -125,7 +125,7 @@ def login():
             session['logged_in'] = True
             session['last_activity'] = time.time()
             session['ip'] = ip  # Guardar IP para verificación adicional
-            return redirect(url_for('index'))
+            return redirect(url_for('dashboard'))
         
         # Registrar intento fallido
         record_failed_attempt(ip)
@@ -156,15 +156,16 @@ def facturacion_login():
 @app.route('/')
 @login_required
 def index():
-    # Redirigir al dashboard después del login
-    if 'facturacion_access' not in session:
-        return render_template('dashboard.html')
-    
-    # Si tiene acceso a facturación y viene de ahí, mostrar la página de facturación
-    if session.get('facturacion_access') and request.args.get('section') == 'facturacion':
-        return render_template('facturacion/index.html')
-    
-    # En otro caso, mostrar la página de finanzas
+    return redirect(url_for('dashboard'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/finanzas')
+@login_required
+def finanzas():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT * FROM movimientos ORDER BY fecha DESC;')
