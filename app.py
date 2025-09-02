@@ -1007,34 +1007,5 @@ def store_subscription():
     push_subscriptions[user_id] = subscription
     return jsonify({'status': 'success'})
 
-@app.route('/api/recordatorio', methods=['POST'])
-@login_required
-def crear_recordatorio():
-    data = request.get_json()
-    movimiento_id = data.get('movimientoId')
-    fecha_recordatorio = datetime.strptime(data.get('fecha'), '%Y-%m-%d')
-    descripcion = data.get('descripcion')
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO recordatorios (movimiento_id, fecha_recordatorio, descripcion)
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        ''', (movimiento_id, fecha_recordatorio, descripcion))
-        recordatorio_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({
-            'status': 'success',
-            'id': recordatorio_id
-        })
-    except Exception as e:
-        print('Error al crear recordatorio:', e)
-        return jsonify({'status': 'error', 'error': str(e)}), 500
-
 if __name__ == '__main__':
     app.run(debug=True)
