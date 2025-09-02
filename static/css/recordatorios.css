@@ -1,0 +1,38 @@
+.btn-campana {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-campana:hover {
+    transform: scale(1.2);
+}
+
+.btn-campana i {
+    color: #0d6efd;
+}
+
+.btn-campana i.fa-bell-slash {
+    color: #6c757d;
+}
+
+/* Animación cuando se activa la campana */
+@keyframes ring {
+    0% { transform: rotate(0); }
+    10% { transform: rotate(30deg); }
+    20% { transform: rotate(-28deg); }
+    30% { transform: rotate(25deg); }
+    40% { transform: rotate(-22deg); }
+    50% { transform: rotate(18deg); }
+    60% { transform: rotate(-15deg); }
+    70% { transform: rotate(12deg); }
+    80% { transform: rotate(-8deg); }
+    90% { transform: rotate(5deg); }
+    100% { transform: rotate(0); }
+}
+
+.btn-campana i.fa-bell {
+    animation: ring 0.6s ease-out;
+}
