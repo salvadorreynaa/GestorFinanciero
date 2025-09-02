@@ -15,6 +15,7 @@
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <script src="{{ url_for('static', filename='js/notificaciones-basicas.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/recordatorios.js') }}"></script>
 </head>
 <body>
   <!-- Botón de prueba para notificaciones -->
@@ -98,6 +99,19 @@
 </div>
 
   <table id="tabla-movimientos">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Descripción</th>
+        <th>Monto</th>
+        <th>Tipo</th>
+        <th>Empresa</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-movimientos">
+    </tbody>
     <thead>
       <tr>
         <th>Fecha</th>

@@ -264,6 +264,9 @@ function generarHTMLMovimiento(mov) {
           <path fill="currentColor" d="M9 3V4H4V6H5V20A2 2 0 0 0 7 22H17A2 2 0 0 0 19 20V6H20V4H15V3H9ZM7 6H17V20H7V6ZM9 8V18H11V8H9ZM13 8V18H15V8H13Z"/>
         </svg>
       </button>
+      <button class="boton-notificar" title="${mov.notificacion_activa ? 'Desactivar recordatorio' : 'Activar recordatorio'}" onclick="toggleNotificacion('${mov.id}')">
+        <i class="${mov.notificacion_activa ? 'fas' : 'far'} fa-bell"></i>
+      </button>
     </td>
   `;
 }
