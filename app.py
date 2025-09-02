@@ -22,10 +22,16 @@ def manifest():
 # Rutas para recordatorios
 @app.route('/api/recordatorios', methods=['POST'])
 def crear_recordatorio():
+    if not request.is_json:
+        return jsonify({'error': 'Missing JSON'}), 400
+    
     try:
         data = request.json
         movimiento_id = data.get('movimiento_id')
         activo = data.get('activo', True)
+
+        if not movimiento_id:
+            return jsonify({'error': 'Missing movimiento_id'}), 400
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -33,6 +39,66 @@ def crear_recordatorio():
         # Verificar si ya existe un recordatorio para este movimiento
         cur.execute("SELECT id, activo FROM recordatorios WHERE movimiento_id = %s", (movimiento_id,))
         recordatorio_existente = cur.fetchone()
+
+        if recordatorio_existente:
+            # Actualizar el estado del recordatorio existente
+            cur.execute("""
+                UPDATE recordatorios 
+                SET activo = %s, fecha_modificacion = CURRENT_TIMESTAMP 
+                WHERE movimiento_id = %s
+                RETURNING id
+            """, (activo, movimiento_id))
+        else:
+            # Crear nuevo recordatorio
+            cur.execute("""
+                INSERT INTO recordatorios (movimiento_id, activo) 
+                VALUES (%s, %s) 
+                RETURNING id
+            """, (movimiento_id, activo))
+
+        recordatorio_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({'id': recordatorio_id, 'activo': activo}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recordatorios/<int:movimiento_id>', methods=['GET'])
+def obtener_recordatorio(movimiento_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("SELECT id, activo FROM recordatorios WHERE movimiento_id = %s", (movimiento_id,))
+        recordatorio = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if recordatorio:
+            return jsonify({'id': recordatorio[0], 'activo': recordatorio[1]}), 200
+        else:
+            return jsonify({'activo': False}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recordatorios/<int:movimiento_id>', methods=['DELETE'])
+def eliminar_recordatorio(movimiento_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("UPDATE recordatorios SET activo = false WHERE movimiento_id = %s", (movimiento_id,))
+        conn.commit()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
         if recordatorio_existente:
             # Actualizar el estado del recordatorio existente
@@ -984,35 +1050,6 @@ def store_subscription():
     user_id = session.get('user_id', 'default')
     push_subscriptions[user_id] = subscription
     return jsonify({'status': 'success'})
-
-@app.route('/api/recordatorio', methods=['POST'])
-@login_required
-def crear_recordatorio():
-    data = request.get_json()
-    movimiento_id = data.get('movimientoId')
-    fecha_recordatorio = datetime.strptime(data.get('fecha'), '%Y-%m-%d')
-    descripcion = data.get('descripcion')
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO recordatorios (movimiento_id, fecha_recordatorio, descripcion)
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        ''', (movimiento_id, fecha_recordatorio, descripcion))
-        recordatorio_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({
-            'status': 'success',
-            'id': recordatorio_id
-        })
-    except Exception as e:
-        print('Error al crear recordatorio:', e)
-        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
