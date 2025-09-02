@@ -46,52 +46,47 @@ async function cargarRecordatorios() {
 }
 
 // Función para manejar las notificaciones
-function toggleNotificacion() {
+function configurarNotificacion(movimientoId) {
     if (!("Notification" in window)) {
         alert("Este navegador no soporta notificaciones de escritorio");
         return;
     }
 
-    if (Notification.permission === "granted") {
-        // Si ya tenemos permiso, toggle el estado en el servidor
-        fetch('/api/toggle-notificaciones', {
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                pedirFechaRecordatorio(movimientoId);
+            }
+        });
+    } else {
+        pedirFechaRecordatorio(movimientoId);
+    }
+}
+
+function pedirFechaRecordatorio(movimientoId) {
+    const fecha = prompt('¿Cuándo quieres recibir el recordatorio? (YYYY-MM-DD)');
+    if (fecha) {
+        const descripcion = `Recordatorio de movimiento #${movimientoId}`;
+        fetch(`/api/recordatorios/${movimientoId}/notificar`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-            }
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                fecha: fecha,
+                descripcion: descripcion 
+            })
         })
         .then(response => response.json())
         .then(data => {
-            if (data.estado) {
-                alert("Notificaciones activadas");
-            } else {
-                alert("Notificaciones desactivadas");
+            if (data.success) {
+                alert("Recordatorio configurado correctamente para " + fecha);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert("Error al cambiar el estado de las notificaciones");
-        });
-    } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                // Una vez que tenemos permiso, activar en el servidor
-                fetch('/api/toggle-notificaciones', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ estado: true })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert("Notificaciones activadas");
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("Error al activar las notificaciones");
-                });
-            }
+            alert("Error al configurar el recordatorio");
         });
     }
+}
 }

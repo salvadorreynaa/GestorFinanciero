@@ -1011,36 +1011,50 @@ def api_movimientos_patch(id):
 from pywebpush import webpush, WebPushException
 import json
 
-@app.route('/api/toggle-notificaciones', methods=['POST'])
-def toggle_notificaciones():
+@app.route('/api/recordatorios/<int:movimiento_id>/notificar', methods=['POST'])
+def activar_notificacion(movimiento_id):
     try:
-        user_id = session.get('user_id')
-        if not user_id:
-            return jsonify({'error': 'Usuario no autenticado'}), 401
-
         data = request.json
-        estado = data.get('estado', True)  # Por defecto activamos las notificaciones
+        if not data:
+            return jsonify({'error': 'Datos no proporcionados'}), 400
+
+        fecha = data.get('fecha')
+        descripcion = data.get('descripcion')
+        
+        if not fecha or not descripcion:
+            return jsonify({'error': 'Fecha y descripción son requeridos'}), 400
         
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Actualizar o crear preferencia de notificaciones
-        cur.execute("""
-            INSERT INTO preferencias_usuario (user_id, notificaciones_activas)
-            VALUES (%s, %s)
-            ON CONFLICT (user_id) 
-            DO UPDATE SET notificaciones_activas = %s
-            RETURNING notificaciones_activas
-        """, (user_id, estado, estado))
+        # Primero verificamos si existe el recordatorio
+        cur.execute("SELECT id FROM recordatorios WHERE movimiento_id = %s", (movimiento_id,))
+        recordatorio = cur.fetchone()
         
-        notificaciones_activas = cur.fetchone()[0]
+        if recordatorio:
+            # Actualizar recordatorio existente
+            cur.execute("""
+                UPDATE recordatorios 
+                SET fecha_recordatorio = %s, descripcion = %s
+                WHERE movimiento_id = %s
+                RETURNING id
+            """, (fecha, descripcion, movimiento_id))
+        else:
+            # Crear nuevo recordatorio
+            cur.execute("""
+                INSERT INTO recordatorios (movimiento_id, fecha_recordatorio, descripcion)
+                VALUES (%s, %s, %s)
+                RETURNING id
+            """, (movimiento_id, fecha, descripcion))
+        
+        recordatorio_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
         
         return jsonify({
-            'estado': notificaciones_activas,
-            'mensaje': 'Notificaciones activadas' if notificaciones_activas else 'Notificaciones desactivadas'
+            'success': True,
+            'mensaje': 'Recordatorio configurado correctamente'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
