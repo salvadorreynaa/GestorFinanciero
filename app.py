@@ -27,9 +27,10 @@ def obtener_recordatorios():
         cur = conn.cursor()
         
         cur.execute("""
-            SELECT r.id, r.movimiento_id, r.fecha_recordatorio, r.descripcion, r.estado 
+            SELECT r.id, r.movimiento_id, r.fecha_recordatorio, r.descripcion, 
+                   COALESCE(r.estado, 'pendiente') as estado
             FROM recordatorios r 
-            WHERE r.estado != 'completado'
+            WHERE r.activo = true
         """)
         recordatorios = cur.fetchall()
         
