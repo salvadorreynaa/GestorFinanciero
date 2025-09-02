@@ -49,3 +49,40 @@ self.addEventListener('fetch', function(event) {
       })
   );
 });
+
+self.addEventListener('push', function(event) {
+  const options = {
+    body: event.data.text(),
+    icon: '/static/img/logo.png',
+    badge: '/static/img/favicon.ico',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'view',
+        title: 'Ver detalles'
+      },
+      {
+        action: 'close',
+        title: 'Cerrar'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification('Vaya Valla Finanzas', options)
+  );
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+
+  if (event.action === 'view') {
+    event.waitUntil(
+      clients.openWindow('/movimientos')
+    );
+  }
+});

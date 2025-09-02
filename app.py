@@ -884,5 +884,60 @@ def api_movimientos_patch(id):
         print('Error al editar movimiento:', e)
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
+# Configuración de notificaciones push
+from pywebpush import webpush, WebPushException
+import json
+from datetime import datetime, timedelta
+import os
+
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', 'tu_clave_privada_aqui')
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', 'tu_clave_publica_aqui')
+VAPID_CLAIMS = {
+    'sub': 'mailto:info@vayavalla.com'
+}
+
+push_subscriptions = {}
+
+@app.route('/api/push-public-key')
+def get_push_public_key():
+    return jsonify({'publicKey': VAPID_PUBLIC_KEY})
+
+@app.route('/api/push-subscription', methods=['POST'])
+@login_required
+def store_subscription():
+    subscription = request.get_json()
+    user_id = session.get('user_id', 'default')
+    push_subscriptions[user_id] = subscription
+    return jsonify({'status': 'success'})
+
+@app.route('/api/recordatorio', methods=['POST'])
+@login_required
+def crear_recordatorio():
+    data = request.get_json()
+    movimiento_id = data.get('movimientoId')
+    fecha_recordatorio = datetime.strptime(data.get('fecha'), '%Y-%m-%d')
+    descripcion = data.get('descripcion')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            INSERT INTO recordatorios (movimiento_id, fecha_recordatorio, descripcion)
+            VALUES (%s, %s, %s)
+            RETURNING id;
+        ''', (movimiento_id, fecha_recordatorio, descripcion))
+        recordatorio_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'id': recordatorio_id
+        })
+    except Exception as e:
+        print('Error al crear recordatorio:', e)
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
