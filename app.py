@@ -20,6 +20,32 @@ def manifest():
     return app.send_file('static/manifest.json', mimetype='application/json')
 
 # Rutas para recordatorios
+@app.route('/api/recordatorios', methods=['GET'])
+def obtener_recordatorios():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT r.id, r.movimiento_id, r.fecha_recordatorio, r.descripcion, r.estado 
+            FROM recordatorios r 
+            WHERE r.estado != 'completado'
+        """)
+        recordatorios = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify([{
+            'id': r[0],
+            'movimiento_id': r[1],
+            'fecha_recordatorio': r[2].strftime('%Y-%m-%d') if r[2] else None,
+            'descripcion': r[3],
+            'estado': r[4]
+        } for r in recordatorios])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/recordatorios', methods=['POST'])
 def crear_recordatorio():
     try:
@@ -984,6 +1010,40 @@ def api_movimientos_patch(id):
 # Configuración de notificaciones push
 from pywebpush import webpush, WebPushException
 import json
+
+@app.route('/api/toggle-notificaciones', methods=['POST'])
+def toggle_notificaciones():
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Usuario no autenticado'}), 401
+
+        data = request.json
+        estado = data.get('estado', True)  # Por defecto activamos las notificaciones
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Actualizar o crear preferencia de notificaciones
+        cur.execute("""
+            INSERT INTO preferencias_usuario (user_id, notificaciones_activas)
+            VALUES (%s, %s)
+            ON CONFLICT (user_id) 
+            DO UPDATE SET notificaciones_activas = %s
+            RETURNING notificaciones_activas
+        """, (user_id, estado, estado))
+        
+        notificaciones_activas = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'estado': notificaciones_activas,
+            'mensaje': 'Notificaciones activadas' if notificaciones_activas else 'Notificaciones desactivadas'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 from datetime import datetime, timedelta
 import os
 
