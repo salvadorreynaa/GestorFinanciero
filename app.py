@@ -238,28 +238,42 @@ def get_db_connection():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Verificar si la IP está bloqueada
-        ip = request.remote_addr
-        if not check_login_attempts(ip):
-            time_left = BLOCK_TIME - (datetime.now() - login_attempts[ip][1]).seconds
-            minutes = time_left // 60
-            seconds = time_left % 60
-            return render_template('login.html', 
-                error=f'Demasiados intentos fallidos. Por favor espera {minutes} minutos y {seconds} segundos.')
+        try:
+            # Verificar si la IP está bloqueada
+            ip = request.remote_addr
+            if not check_login_attempts(ip):
+                time_left = BLOCK_TIME - (datetime.now() - login_attempts[ip][1]).seconds
+                minutes = time_left // 60
+                seconds = time_left % 60
+                return render_template('login.html', 
+                    error=f'Demasiados intentos fallidos. Por favor espera {minutes} minutos y {seconds} segundos.')
 
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        user = verify_credentials(username, password)
-        if user:
-            # Limpiar intentos fallidos
-            if ip in login_attempts:
-                del login_attempts[ip]
-            # Crear una sesión no permanente (se elimina al cerrar el navegador)
-            session.permanent = False
-            session['logged_in'] = True
-            session['username'] = user['username']
-            session['rol'] = user['rol']
+            username = request.form.get('username')
+            password = request.form.get('password')
+            
+            user = verify_credentials(username, password)
+            if user:
+                # Limpiar intentos fallidos
+                if ip in login_attempts:
+                    del login_attempts[ip]
+                # Crear una sesión no permanente (se elimina al cerrar el navegador)
+                session.permanent = False
+                session['logged_in'] = True
+                session['username'] = user['username']
+                session['rol'] = user['rol']
+                session['last_activity'] = time.time()
+                session['ip'] = ip
+                return redirect(url_for('index'))
+            else:
+                # Registrar intento fallido
+                record_failed_attempt(ip)
+                remaining_attempts = ATTEMPT_LIMIT - login_attempts[ip][0]
+                return render_template('login.html', 
+                    error=f'Usuario o contraseña incorrectos. Te quedan {remaining_attempts} intentos.')
+        except Exception as e:
+            print("Error en login:", str(e))
+            return render_template('login.html', 
+                error='Error al intentar iniciar sesión. Por favor intente nuevamente.')
             session['username'] = user['username']
             session['rol'] = user['rol']
             session['last_activity'] = time.time()

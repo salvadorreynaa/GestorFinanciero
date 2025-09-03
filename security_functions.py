@@ -31,6 +31,7 @@ login_attempts = {}
 # Función para verificar credenciales
 def verify_credentials(username, password):
     conn = None
+    cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -49,11 +50,16 @@ def verify_credentials(username, password):
         print("Error verificando credenciales:", str(e))
         return None
     finally:
+        if cur:
+            try:
+                cur.close()
+            except Exception as e:
+                print("Error cerrando cursor:", str(e))
         if conn:
             try:
                 conn.close()
-            except:
-                pass
+            except Exception as e:
+                print("Error cerrando conexión:", str(e))
         print("Error verificando credenciales:", e)
         return None
 
