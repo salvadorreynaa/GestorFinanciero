@@ -54,9 +54,31 @@ def verify_credentials(username, password):
             return None
 
         cur = conn.cursor()
+        
+        # Verificar si la tabla usuarios existe
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'usuarios'
+            );
+        """)
+        table_exists = cur.fetchone()[0]
+        
+        if not table_exists:
+            print("La tabla 'usuarios' no existe en la base de datos")
+            return None
+            
+        # Verificar si hay usuarios en la tabla
+        cur.execute("SELECT COUNT(*) FROM usuarios")
+        user_count = cur.fetchone()[0]
+        print(f"Número de usuarios en la tabla: {user_count}")
+        
+        # Intentar obtener el usuario
         cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
-
+        
+        print(f"Buscando usuario '{username}': {'encontrado' if user else 'no encontrado'}")
+        
         if user and check_password_hash(user[1], password):
             return {
                 'id': user[0],
