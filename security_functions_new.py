@@ -64,67 +64,6 @@ def verify_credentials(username, password):
         print(f"Usuario {username} no encontrado")
     
     return None
-from datetime import datetime, timedelta
-import time
-
-# Constantes de seguridad
-BLOCK_TIME = 300  # 5 minutos de bloqueo
-ATTEMPT_LIMIT = 3  # Número máximo de intentos permitidos
-
-# Diccionario para almacenar los intentos de inicio de sesión
-login_attempts = {}
-
-# Credenciales hardcoded temporalmente para depuración
-USERS = {
-    'vayavalla': {
-        'password': 'palayenti2512',
-        'rol': 'admin'
-    },
-    'registros': {
-        'password': '221885',
-        'rol': 'registro'
-    }
-}
-
-# Función para verificar credenciales
-def verify_credentials(username, password):
-    print(f"Verificando usuario: {username}")
-    
-    # Verificar si el usuario existe
-    if username in USERS:
-        print(f"Usuario {username} encontrado")
-        # Verificar contraseña
-        if USERS[username]['password'] == password:
-            print(f"Contraseña correcta para {username}")
-            return {
-                'id': 1,  # ID temporal
-                'username': username,
-                'rol': USERS[username]['rol']
-            }
-        else:
-            print(f"Contraseña incorrecta para {username}")
-    else:
-        print(f"Usuario {username} no encontrado")
-    
-    return None
-
-    except psycopg2.Error as e:
-        print("Error de base de datos:", e.pgerror)
-        return None
-    except Exception as e:
-        print("Error inesperado:", str(e))
-        return None
-    finally:
-        if cur:
-            try:
-                cur.close()
-            except:
-                pass
-        if conn:
-            try:
-                conn.close()
-            except:
-                pass
 
 def login_required(f):
     """Decorador para proteger rutas que requieren autenticación"""
@@ -148,36 +87,3 @@ def login_required(f):
         session['last_activity'] = time.time()
         return f(*args, **kwargs)
     return decorated_function
-        
-        session['last_activity'] = time.time()
-        return f(*args, **kwargs)
-    return decorated_function
-
-# Decorador para proteger rutas API
-def api_login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return jsonify({"error": "No autorizado"}), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
-def check_login_attempts(ip):
-    if ip in login_attempts:
-        attempts, last_attempt = login_attempts[ip]
-        if datetime.now() - last_attempt > timedelta(seconds=BLOCK_TIME):
-            login_attempts[ip] = (0, datetime.now())
-            return True
-        if attempts >= ATTEMPT_LIMIT:
-            time_left = BLOCK_TIME - (datetime.now() - last_attempt).seconds
-            if time_left > 0:
-                return False
-            login_attempts[ip] = (0, datetime.now())
-    return True
-
-def record_failed_attempt(ip):
-    if ip in login_attempts:
-        attempts, _ = login_attempts[ip]
-        login_attempts[ip] = (attempts + 1, datetime.now())
-    else:
-        login_attempts[ip] = (1, datetime.now())
