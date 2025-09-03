@@ -10,6 +10,12 @@ import time
 app = Flask(__name__)
 app.secret_key = 'vayavalla2512'  # Clave secreta para las sesiones
 
+# Ruta para cerrar sesión
+@app.route('/logout')
+def logout():
+    session.clear()  # Limpia todas las variables de sesión
+    return redirect(url_for('login'))
+
 # Rutas para PWA
 @app.route('/sw.js')
 def service_worker():
