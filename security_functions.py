@@ -1,17 +1,23 @@
 from flask import session, request, redirect, url_for, jsonify
 from functools import wraps
 # security_functions.py
+import os
 import hashlib
 import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_db_connection():
-    return psycopg2.connect(
-        host="localhost",
-        database="finanzas",
-        user="postgres",
-        password="postgres"
-    )
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        # Configuración local
+        return psycopg2.connect(
+            host="localhost",
+            database="finanzas",
+            user="postgres",
+            password="postgres"
+        )
+    # Configuración de producción
+    return psycopg2.connect(DATABASE_URL)
 from datetime import datetime, timedelta
 import time
 

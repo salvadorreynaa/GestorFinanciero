@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, send_from_directory
 from functools import wraps
 import psycopg2
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -17,7 +17,7 @@ def service_worker():
 
 @app.route('/manifest.json')
 def manifest():
-    return app.send_file('static/manifest.json', mimetype='application/json')
+    return send_from_directory('static', 'manifest.json', mimetype='application/json')
 
 # Rutas para recordatorios
 @app.route('/api/recordatorios', methods=['GET'])
