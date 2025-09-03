@@ -82,8 +82,6 @@ def verify_credentials(username, password):
                 conn.close()
             except:
                 pass
-        print("Error verificando credenciales:", e)
-        return None
 
 # Decorador para proteger rutas
 def login_required(f):
