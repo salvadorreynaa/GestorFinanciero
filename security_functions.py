@@ -7,17 +7,23 @@ import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_db_connection():
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if not DATABASE_URL:
-        # Configuración local
-        return psycopg2.connect(
-            host="localhost",
-            database="finanzas",
-            user="postgres",
-            password="postgres"
-        )
-    # Configuración de producción
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        if not DATABASE_URL:
+            print("DATABASE_URL no está configurada, usando configuración local")
+            return psycopg2.connect(
+                host="localhost",
+                database="finanzas",
+                user="postgres",
+                password="postgres"
+            )
+        print("Intentando conectar usando DATABASE_URL")
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        return psycopg2.connect(DATABASE_URL)
+    except Exception as e:
+        print("Error en get_db_connection:", str(e))
+        return None
 from datetime import datetime, timedelta
 import time
 
@@ -34,48 +40,37 @@ def verify_credentials(username, password):
     cur = None
     try:
         # Intentar obtener la conexión
-        try:
-            conn = get_db_connection()
-        except Exception as e:
-            print("Error conectando a la base de datos:", str(e))
+        conn = get_db_connection()
+        if not conn:
+            print("No se pudo establecer conexión con la base de datos")
             return None
 
         # Intentar ejecutar la consulta
-        try:
-            cur = conn.cursor()
-            cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
-            user = cur.fetchone()
-        except Exception as e:
-            print("Error consultando usuario:", str(e))
-            return None
+        cur = conn.cursor()
+        cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
 
         # Verificar contraseña
-        try:
-            if user and check_password_hash(user[1], password):
-                return {
-                    'id': user[0],
-                    'username': username,
-                    'rol': user[2]
-                }
-        except Exception as e:
-            print("Error verificando contraseña:", str(e))
-        
+        if user and check_password_hash(user[1], password):
+            return {
+                'id': user[0],
+                'username': username,
+                'rol': user[2]
+            }
         return None
-        
+
+    except Exception as e:
+        print("Error en verify_credentials:", str(e))
+        return None
+
     finally:
-        # Cerrar cursor
-        if cur:
-            try:
+        try:
+            if cur:
                 cur.close()
-            except Exception as e:
-                print("Error cerrando cursor:", str(e))
-        
-        # Cerrar conexión
-        if conn:
-            try:
+            if conn:
                 conn.close()
-            except Exception as e:
-                print("Error cerrando conexión:", str(e))
+        except Exception as e:
+            print("Error cerrando recursos:", str(e))
         print("Error verificando credenciales:", e)
         return None
 
