@@ -33,28 +33,44 @@ def verify_credentials(username, password):
     conn = None
     cur = None
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        # Intentar obtener la conexión
+        try:
+            conn = get_db_connection()
+        except Exception as e:
+            print("Error conectando a la base de datos:", str(e))
+            return None
+
+        # Intentar ejecutar la consulta
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
+            user = cur.fetchone()
+        except Exception as e:
+            print("Error consultando usuario:", str(e))
+            return None
+
+        # Verificar contraseña
+        try:
+            if user and check_password_hash(user[1], password):
+                return {
+                    'id': user[0],
+                    'username': username,
+                    'rol': user[2]
+                }
+        except Exception as e:
+            print("Error verificando contraseña:", str(e))
         
-        cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
-        user = cur.fetchone()
+        return None
         
-        if user and check_password_hash(user[1], password):
-            return {
-                'id': user[0],
-                'username': username,
-                'rol': user[2]
-            }
-        return None
-    except Exception as e:
-        print("Error verificando credenciales:", str(e))
-        return None
     finally:
+        # Cerrar cursor
         if cur:
             try:
                 cur.close()
             except Exception as e:
                 print("Error cerrando cursor:", str(e))
+        
+        # Cerrar conexión
         if conn:
             try:
                 conn.close()

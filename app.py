@@ -238,19 +238,23 @@ def get_db_connection():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        ip = request.remote_addr
+        
+        # Verificar si la IP está bloqueada
         try:
-            # Verificar si la IP está bloqueada
-            ip = request.remote_addr
             if not check_login_attempts(ip):
                 time_left = BLOCK_TIME - (datetime.now() - login_attempts[ip][1]).seconds
                 minutes = time_left // 60
                 seconds = time_left % 60
                 return render_template('login.html', 
                     error=f'Demasiados intentos fallidos. Por favor espera {minutes} minutos y {seconds} segundos.')
+        except Exception as e:
+            print("Error verificando intentos:", str(e))
 
-            username = request.form.get('username')
-            password = request.form.get('password')
-            
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        try:
             user = verify_credentials(username, password)
             if user:
                 # Limpiar intentos fallidos
@@ -264,14 +268,19 @@ def login():
                 session['last_activity'] = time.time()
                 session['ip'] = ip
                 return redirect(url_for('index'))
-            else:
-                # Registrar intento fallido
-                record_failed_attempt(ip)
-                remaining_attempts = ATTEMPT_LIMIT - login_attempts[ip][0]
-                return render_template('login.html', 
-                    error=f'Usuario o contraseña incorrectos. Te quedan {remaining_attempts} intentos.')
+            
+            # Si llegamos aquí, las credenciales son inválidas
+            # Registrar intento fallido
+            if ip not in login_attempts:
+                login_attempts[ip] = [0, datetime.now()]
+            login_attempts[ip] = (login_attempts[ip][0] + 1, datetime.now())
+            remaining_attempts = ATTEMPT_LIMIT - login_attempts[ip][0]
+            
+            return render_template('login.html', 
+                error=f'Usuario o contraseña incorrectos. Te quedan {remaining_attempts} intentos.')
+                
         except Exception as e:
-            print("Error en login:", str(e))
+            print("Error en verificación de credenciales:", str(e))
             return render_template('login.html', 
                 error='Error al intentar iniciar sesión. Por favor intente nuevamente.')
             session['username'] = user['username']
