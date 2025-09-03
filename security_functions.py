@@ -7,22 +7,31 @@ import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_db_connection():
-    try:
-        DATABASE_URL = os.environ.get('DATABASE_URL')
-        if not DATABASE_URL:
-            print("DATABASE_URL no está configurada, usando configuración local")
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        print("DATABASE_URL no está configurada")
+        try:
+            print("Intentando usar configuración local")
             return psycopg2.connect(
                 host="localhost",
                 database="finanzas",
                 user="postgres",
                 password="postgres"
             )
+        except psycopg2.Error as e:
+            print("Error conectando localmente:", e.pgerror)
+            return None
+    
+    try:
         print("Intentando conectar usando DATABASE_URL")
         if DATABASE_URL.startswith('postgres://'):
             DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
         return psycopg2.connect(DATABASE_URL)
+    except psycopg2.Error as e:
+        print("Error conectando con DATABASE_URL:", e.pgerror)
+        return None
     except Exception as e:
-        print("Error en get_db_connection:", str(e))
+        print("Error inesperado:", str(e))
         return None
 from datetime import datetime, timedelta
 import time
@@ -39,18 +48,15 @@ def verify_credentials(username, password):
     conn = None
     cur = None
     try:
-        # Intentar obtener la conexión
         conn = get_db_connection()
         if not conn:
             print("No se pudo establecer conexión con la base de datos")
             return None
 
-        # Intentar ejecutar la consulta
         cur = conn.cursor()
         cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
 
-        # Verificar contraseña
         if user and check_password_hash(user[1], password):
             return {
                 'id': user[0],
@@ -59,18 +65,23 @@ def verify_credentials(username, password):
             }
         return None
 
-    except Exception as e:
-        print("Error en verify_credentials:", str(e))
+    except psycopg2.Error as e:
+        print("Error de base de datos:", e.pgerror)
         return None
-
+    except Exception as e:
+        print("Error inesperado:", str(e))
+        return None
     finally:
-        try:
-            if cur:
+        if cur:
+            try:
                 cur.close()
-            if conn:
+            except:
+                pass
+        if conn:
+            try:
                 conn.close()
-        except Exception as e:
-            print("Error cerrando recursos:", str(e))
+            except:
+                pass
         print("Error verificando credenciales:", e)
         return None
 
