@@ -260,6 +260,8 @@ def login():
             session['logged_in'] = True
             session['username'] = user['username']
             session['rol'] = user['rol']
+            session['username'] = user['username']
+            session['rol'] = user['rol']
             session['last_activity'] = time.time()
             session['ip'] = ip  # Guardar IP para verificación adicional
             return redirect(url_for('index'))

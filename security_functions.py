@@ -30,15 +30,13 @@ login_attempts = {}
 
 # Función para verificar credenciales
 def verify_credentials(username, password):
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
         cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
         user = cur.fetchone()
-        
-        cur.close()
-        conn.close()
         
         if user and check_password_hash(user[1], password):
             return {
@@ -48,6 +46,14 @@ def verify_credentials(username, password):
             }
         return None
     except Exception as e:
+        print("Error verificando credenciales:", str(e))
+        return None
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
         print("Error verificando credenciales:", e)
         return None
 
