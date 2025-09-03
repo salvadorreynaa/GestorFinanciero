@@ -79,12 +79,16 @@ def verify_credentials(username, password):
         
         print(f"Buscando usuario '{username}': {'encontrado' if user else 'no encontrado'}")
         
-        if user and check_password_hash(user[1], password):
-            return {
-                'id': user[0],
-                'username': username,
-                'rol': user[2]
-            }
+        if user:
+            print(f"Hash almacenado para {username}: {user[1]}")
+            result = check_password_hash(user[1], password)
+            print(f"Resultado de verificación de contraseña: {result}")
+            if result:
+                return {
+                    'id': user[0],
+                    'username': username,
+                    'rol': user[2]
+                }
         return None
 
     except psycopg2.Error as e:
