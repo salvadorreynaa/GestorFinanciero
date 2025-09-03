@@ -2,6 +2,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const hamburgerMenu = document.querySelector('.hamburger-menu');
     const nav = document.querySelector('nav');
 
+    // Verificar el rol del usuario
+    fetch('/api/user-role')
+        .then(response => response.json())
+        .then(data => {
+            if (data.rol === 'registro') {
+                // Ocultar enlaces no permitidos para usuarios de registro
+                const restrictedLinks = document.querySelectorAll('nav a[href*="estadisticas"], nav a[href*="contactos"]');
+                restrictedLinks.forEach(link => {
+                    link.style.display = 'none';
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+
     // Función para alternar el menú
     function toggleMenu() {
         hamburgerMenu.classList.toggle('active');

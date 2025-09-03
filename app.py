@@ -176,9 +176,8 @@ def record_failed_attempt(ip):
     else:
         login_attempts[ip] = (1, datetime.now())
 
-# Credenciales (en un entorno real, esto debería estar en una base de datos)
-VALID_USERNAME = "vayavalla"
-VALID_PASSWORD = generate_password_hash("palayenti2512")
+# Importar funciones de seguridad
+from security_functions import verify_credentials
 
 # Decorador para proteger rutas
 def login_required(f):
@@ -196,6 +195,17 @@ def login_required(f):
         if time.time() - session.get('last_activity', 0) > 1800:  # 30 minutos
             session.clear()
             return redirect(url_for('login'))
+            
+        # Verificar permisos según el rol
+        current_route = request.endpoint
+        user_rol = session.get('rol', '')
+        
+        # Rutas permitidas para el rol 'registro'
+        registro_routes = ['index', 'movimientos']
+        
+        # Si el usuario es 'registro' y trata de acceder a una ruta no permitida
+        if user_rol == 'registro' and current_route not in registro_routes:
+            return redirect(url_for('index'))
         
         # Actualizar tiempo de última actividad
         session['last_activity'] = time.time()
@@ -240,13 +250,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        if username == VALID_USERNAME and password == "palayenti2512":
+        user = verify_credentials(username, password)
+        if user:
             # Limpiar intentos fallidos
             if ip in login_attempts:
                 del login_attempts[ip]
             # Crear una sesión no permanente (se elimina al cerrar el navegador)
             session.permanent = False
             session['logged_in'] = True
+            session['username'] = user['username']
+            session['rol'] = user['rol']
             session['last_activity'] = time.time()
             session['ip'] = ip  # Guardar IP para verificación adicional
             return redirect(url_for('index'))
@@ -296,6 +309,15 @@ def index():
     except Exception as e:
         print('Error en index:', e)
         return render_template('index.html', movimientos=[])
+
+# Endpoint para obtener el rol del usuario
+@app.route('/api/user-role', methods=['GET'])
+@api_login_required
+def get_user_role():
+    return jsonify({
+        'rol': session.get('rol', ''),
+        'username': session.get('username', '')
+    })
 
 # Endpoint para estadísticas
 @app.route('/estadisticas')

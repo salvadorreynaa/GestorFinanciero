@@ -1,6 +1,17 @@
 from flask import session, request, redirect, url_for, jsonify
 from functools import wraps
-from werkzeug.security import generate_password_hash
+# security_functions.py
+import hashlib
+import psycopg2
+from werkzeug.security import generate_password_hash, check_password_hash
+
+def get_db_connection():
+    return psycopg2.connect(
+        host="localhost",
+        database="finanzas",
+        user="postgres",
+        password="postgres"
+    )
 from datetime import datetime, timedelta
 import time
 
@@ -11,9 +22,28 @@ ATTEMPT_LIMIT = 3  # Número máximo de intentos permitidos
 # Diccionario para almacenar los intentos de inicio de sesión
 login_attempts = {}
 
-# Credenciales y seguridad
-VALID_USERNAME = "vayavalla"
-VALID_PASSWORD = generate_password_hash("palayenti2512")
+# Función para verificar credenciales
+def verify_credentials(username, password):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("SELECT id, password_hash, rol FROM usuarios WHERE username = %s", (username,))
+        user = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if user and check_password_hash(user[1], password):
+            return {
+                'id': user[0],
+                'username': username,
+                'rol': user[2]
+            }
+        return None
+    except Exception as e:
+        print("Error verificando credenciales:", e)
+        return None
 
 # Decorador para proteger rutas
 def login_required(f):
