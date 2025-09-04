@@ -303,11 +303,6 @@ def login():
     
     return render_template('login.html')
 
-@app.route('/logout')
-def logout():
-    session.clear()  # Limpiar toda la sesión
-    return redirect(url_for('login'))
-
 @app.route('/facturacion/login', methods=['GET', 'POST'])
 @login_required
 def facturacion_login():
