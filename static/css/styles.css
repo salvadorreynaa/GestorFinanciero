@@ -768,7 +768,8 @@ form .check-button:hover {
 .filtros-inferiores input,
 .filtros-inferiores select,
 .filtros-superiores select,
-.filtros-empresa select {
+.filtros-empresa select,
+#modal-editar select {
   padding: 7px 12px;
   border-radius: 6px;
   border: 1.2px solid #b3c6e7;
