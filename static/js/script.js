@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
     opcionesMultiples: document.getElementById('opciones-multiples'),
     explicacionMultiples: document.getElementById('explicacion-multiples'),
     inputFecha: document.getElementById('fecha'),
+    mesSelect: document.getElementById('mes'),
+    anoSelect: document.getElementById('ano'),
     mesFinMultiple: document.getElementById('mes-fin-multiple'),
     tipoSelect: document.getElementById('tipo'),
     tiposMovimientosInput: document.getElementById('tiposmovimientos'),
@@ -474,6 +476,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   elements.inputFecha?.addEventListener('change', () => {
+    // Actualizar mes y año automáticamente
+    const fecha = new Date(elements.inputFecha.value);
+    if (!isNaN(fecha.getTime())) {
+      elements.mesSelect.value = fecha.getMonth() + 1; // Mes es 0-based en JavaScript
+      elements.anoSelect.value = fecha.getFullYear();
+    }
+    
+    // Actualizar fechas múltiples si está activado
     if (elements.activarMultiples?.checked) actualizarFechasMultiples();
   });
 
