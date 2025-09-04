@@ -751,17 +751,25 @@ form .check-button:hover {
 }
 
 .filtros-superiores,
+.filtros-empresa,
 .filtros-inferiores {
   display: flex;
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
   justify-content: center;
+  width: 100%;
+}
+
+.filtros-empresa {
+  justify-content: flex-start;
+  padding-left: 20px;
 }
 
 .filtros-inferiores input,
 .filtros-inferiores select,
-.filtros-superiores select {
+.filtros-superiores select,
+.filtros-empresa select {
   padding: 7px 12px;
   border-radius: 6px;
   border: 1.2px solid #b3c6e7;
@@ -776,6 +784,7 @@ form .check-button:hover {
 
 @media (max-width: 900px) {
   .filtros-superiores,
+  .filtros-empresa,
   .filtros-inferiores {
     gap: 10px;
   }
@@ -789,6 +798,7 @@ form .check-button:hover {
     padding: 10px 4vw;
   }
   .filtros-superiores,
+  .filtros-empresa,
   .filtros-inferiores {
     flex-direction: column;
     align-items: stretch;
