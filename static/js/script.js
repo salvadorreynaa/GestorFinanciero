@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM cargado, iniciando aplicación...');
+  
+  // Establecer la fecha actual por defecto y disparar el evento change
+  const fechaActual = new Date().toISOString().split('T')[0];
+  if (elements.inputFecha) {
+    elements.inputFecha.value = fechaActual;
+    elements.inputFecha.dispatchEvent(new Event('change'));
+  }
 
   // Función para mostrar notificaciones
   function showNotification(message, type = 'success') {
@@ -21,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     explicacionMultiples: document.getElementById('explicacion-multiples'),
     inputFecha: document.getElementById('fecha'),
     mesSelect: document.getElementById('mes'),
-    anoSelect: document.getElementById('ano'),
+    anoSelect: document.getElementById('ano'), // Ahora usando 'ano' en lugar de 'año'
     mesFinMultiple: document.getElementById('mes-fin-multiple'),
     tipoSelect: document.getElementById('tipo'),
     tiposMovimientosInput: document.getElementById('tiposmovimientos'),
@@ -479,8 +486,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Actualizar mes y año automáticamente
     const fecha = new Date(elements.inputFecha.value);
     if (!isNaN(fecha.getTime())) {
-      elements.mesSelect.value = fecha.getMonth() + 1; // Mes es 0-based en JavaScript
-      elements.anoSelect.value = fecha.getFullYear();
+      // Verificar que los elementos existan antes de actualizar sus valores
+      if (elements.mesSelect) {
+        elements.mesSelect.value = fecha.getMonth() + 1; // Mes es 0-based en JavaScript
+      }
+      if (elements.anoSelect) {
+        elements.anoSelect.value = fecha.getFullYear();
+      }
     }
     
     // Actualizar fechas múltiples si está activado
