@@ -446,6 +446,7 @@ async function editarMovimiento(id) {
     `;
   }
   selectTipo.value = mov.tipo;
+  await cargarTiposMovimientoEnSelector(mov.tipo);
   document.getElementById("input-tipoMovimiento").value = mov.tipoMovimiento;
   document.getElementById("input-descripcion").value = mov.descripcion;
   // Asigna solo la parte de fecha yyyy-MM-dd
@@ -466,15 +467,30 @@ async function editarMovimiento(id) {
   document.getElementById("modal-editar").style.display = "flex";
 }
 
-// Cambia las opciones de Awesomplete al cambiar el tipo en el modal
+// Función para cargar los tipos de movimiento en el selector
+async function cargarTiposMovimientoEnSelector(tipo) {
+  const select = document.getElementById("input-tipoMovimiento");
+  select.innerHTML = '<option value="">Seleccione un tipo</option>';
+  
+  try {
+    const res = await fetch(`/api/tipos_movimiento?tipo=${tipo}`);
+    const tipos = await res.json();
+    
+    tipos.forEach(t => {
+      const option = document.createElement("option");
+      option.value = t.nombre;
+      option.textContent = t.nombre;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error cargando tipos de movimiento:", error);
+  }
+}
+
+// Cambia las opciones del selector al cambiar el tipo en el modal
 document.getElementById("input-tipo").addEventListener("change", async function(e) {
   const tipo = e.target.value;
-  // Primero recargamos los tipos de movimiento
-  await cargarTiposMovimiento();
-  // Luego actualizamos el Awesomplete con los nuevos tipos
-  actualizarAwesompleteModal(tipo);
-  // Limpiamos el campo de tipo de movimiento
-  document.getElementById("input-tipoMovimiento").value = "";
+  await cargarTiposMovimientoEnSelector(tipo);
 });
 
 // Event listeners para movimientos recurrentes en edición
