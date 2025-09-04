@@ -249,7 +249,7 @@ function generarHTMLMovimiento(mov) {
     <td>${mov.descripcion || ""}</td>
     <td>${mes}</td>
     <td>${año}</td>
-    <td>$${monto.toFixed(2)}</td>
+    <td>S/ ${monto.toFixed(2)}</td>
     <td>
       <button class="boton-estado ${mov.estado === "Pagado" || mov.estado === "Cobrado" ? "verde" : ""}" onclick="cambiarEstadoMovimiento('${mov.id}', this)">${mov.estado}</button>
     </td>
