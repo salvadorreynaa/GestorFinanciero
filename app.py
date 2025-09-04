@@ -263,6 +263,13 @@ def login():
         try:
             user = verify_credentials(username, password)
             if user:
+                # Guardar información importante en la sesión
+                session['logged_in'] = True
+                session['username'] = user['username']
+                session['rol'] = user['rol']
+                session['user_id'] = user['id']
+                session['ip'] = request.remote_addr
+                session['last_activity'] = time.time()
                 # Limpiar intentos fallidos
                 if ip in login_attempts:
                     del login_attempts[ip]
