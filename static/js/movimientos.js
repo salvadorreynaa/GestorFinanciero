@@ -500,7 +500,15 @@ document.getElementById("editar-activar-multiples").addEventListener('change', f
   if (this.checked) actualizarExplicacionMultiplesEditar();
 });
 
-document.getElementById("input-fecha").addEventListener('change', () => {
+document.getElementById("input-fecha").addEventListener('change', function() {
+  const fecha = new Date(this.value);
+  if (!isNaN(fecha.getTime())) {
+    // Actualizar los campos ocultos de mes y año
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    document.getElementById("input-mes").value = meses[fecha.getMonth()];
+    document.getElementById("input-ano").value = fecha.getFullYear().toString();
+  }
+  // Actualizar explicación de múltiples si está activo
   if (document.getElementById("editar-activar-multiples").checked) {
     actualizarExplicacionMultiplesEditar();
   }
@@ -562,8 +570,8 @@ document.getElementById("form-editar").addEventListener("submit", async (e) => {
         tipoMovimiento,
         descripcion,
         fecha,
-        mes: mesesNombres[parseInt(mesInicio) - 1],
-        año: anioInicio,
+        mes: document.getElementById("input-mes").value,
+        año: document.getElementById("input-ano").value,
         monto,
         empresa
       };

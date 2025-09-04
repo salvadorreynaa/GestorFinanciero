@@ -152,22 +152,8 @@
         <!-- Las opciones se cargarán dinámicamente -->
       </select>
       </label><br><br>
-      <label>Mes:<br>
-        <select id="input-mes" required>
-          <option value="Enero">Enero</option>
-          <option value="Febrero">Febrero</option>
-          <option value="Marzo">Marzo</option>
-          <option value="Abril">Abril</option>
-          <option value="Mayo">Mayo</option>
-          <option value="Junio">Junio</option>
-          <option value="Julio">Julio</option>
-          <option value="Agosto">Agosto</option>
-          <option value="Septiembre">Septiembre</option>
-          <option value="Octubre">Octubre</option>
-          <option value="Noviembre">Noviembre</option>
-          <option value="Diciembre">Diciembre</option>
-        </select>
-      </label><br><br>
+      <input type="hidden" id="input-mes">
+      <input type="hidden" id="input-ano">
       <label>Monto:<br>
         <input id="input-monto" type="number" step="0.01" min="0" required />
       </label><br><br>
