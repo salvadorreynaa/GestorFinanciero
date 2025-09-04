@@ -1,12 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM cargado, iniciando aplicación...');
-  
-  // Establecer la fecha actual por defecto y disparar el evento change
-  const fechaActual = new Date().toISOString().split('T')[0];
-  if (elements.inputFecha) {
-    elements.inputFecha.value = fechaActual;
-    elements.inputFecha.dispatchEvent(new Event('change'));
-  }
 
   // Función para mostrar notificaciones
   function showNotification(message, type = 'success') {
@@ -62,6 +55,22 @@ document.addEventListener('DOMContentLoaded', function() {
     tipoActual: null,
     lastSelected: null // Para mantener la última selección
   };
+
+  // Establecer la fecha actual por defecto y actualizar mes/año
+  if (elements.inputFecha) {
+    const fechaActual = new Date().toISOString().split('T')[0];
+    elements.inputFecha.value = fechaActual;
+    // Actualizar mes y año basado en la fecha actual
+    const fecha = new Date(fechaActual);
+    if (!isNaN(fecha.getTime())) {
+      if (elements.mesSelect) {
+        elements.mesSelect.value = fecha.getMonth() + 1;
+      }
+      if (elements.anoSelect) {
+        elements.anoSelect.value = fecha.getFullYear();
+      }
+    }
+  }
 
   // Funciones auxiliares
   function setDisplay(element, value) {
